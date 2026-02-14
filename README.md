@@ -5,7 +5,7 @@ Software open source per la gestione di **Enti del Terzo Settore (ETS)**: anagra
 **Repository:** [github.com/pfumarola/ETS-OK](https://github.com/pfumarola/ETS-OK)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![PHP 8.2+](https://img.shields.io/badge/PHP-8.2+-777BB4?logo=php)](https://php.net)
+[![PHP 8.4+](https://img.shields.io/badge/PHP-8.4+-777BB4?logo=php)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel)](https://laravel.com)
 [![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?logo=vue.js)](https://vuejs.org)
 
@@ -28,7 +28,7 @@ Ruoli predefiniti: **admin**, **contabile**, **segreteria**, **socio** (con area
 
 ## Requisiti
 
-- PHP 8.2+
+- PHP 8.4+
 - Composer
 - Node.js (LTS) e npm
 - Database MySQL/MariaDB o SQLite
@@ -75,7 +75,7 @@ php artisan db:seed
 
 | Livello      | Tecnologie |
 |-------------|------------|
-| Backend     | PHP 8.2+, Laravel 12, Jetstream, Fortify, Sanctum, DomPDF |
+| Backend     | PHP 8.4+, Laravel 12, Jetstream, Fortify, Sanctum, DomPDF |
 | Frontend    | Vue 3 (Composition API), Inertia.js 2, Vite 7, Tailwind CSS 3, Heroicons, Ziggy |
 | Database    | MySQL/MariaDB o SQLite (configurabile) |
 | Test        | Pest 4, Laravel Pail |

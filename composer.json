@@ -6,7 +6,7 @@
     "keywords": ["laravel", "ets", "terzo-settore", "gestionale"],
     "license": "GPL-3.0-or-later",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "barryvdh/laravel-dompdf": "^3.1",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
