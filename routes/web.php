@@ -33,11 +33,14 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['install'])->prefix('install')->name('install.')->group(function () {
     Route::get('/', [InstallController::class, 'show'])->name('show');
     Route::get('/back', [InstallController::class, 'back'])->name('back');
-    Route::post('/database', [InstallController::class, 'storeDatabase'])->middleware('throttle:10,1')->name('database');
-    Route::post('/complete', [InstallController::class, 'complete'])->middleware('throttle:5,1')->name('complete');
+    Route::get('/database', [InstallController::class, 'showDatabaseForm'])->name('database.form');
+    Route::post('/database', [InstallController::class, 'storeDatabase'])->name('database');
+    Route::get('/skip-smtp', [InstallController::class, 'skipSmtp'])->name('skip-smtp');
+    Route::post('/smtp', [InstallController::class, 'storeSmtp'])->name('smtp');
+    Route::post('/complete', [InstallController::class, 'complete'])->name('complete');
 });
 
-Route::get('/', PublicSiteController::class)->name('home');
+Route::get('/', PublicSiteController::class)->middleware('redirectToInstall')->name('home');
 
 Route::middleware('signed')->group(function () {
     Route::get('/public/logo/{attachment}', [PublicDownloadController::class, 'logo'])->name('public.logo.show');

@@ -1,5 +1,14 @@
 @extends('install.layout')
 
+@php
+    $p = $prefill ?? null;
+    $conn = old('db_connection', $p ? ($p['connection'] ?? 'mysql') : 'mysql');
+    $host = old('db_host', $p ? ($p['host'] ?? '127.0.0.1') : '127.0.0.1');
+    $port = old('db_port', $p ? ($p['port'] ?? '3306') : '3306');
+    $dbName = old('db_database', $p ? ($p['database'] ?? '') : '');
+    $username = old('db_username', $p ? ($p['username'] ?? '') : '');
+    $sqlitePath = ($p && ($p['connection'] ?? '') === 'sqlite') ? ($p['database'] ?? '') : '';
+@endphp
 @section('content')
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <p class="text-gray-600 text-sm mb-4">Configura la connessione al database. Puoi usare MySQL/MariaDB o SQLite.</p>
@@ -8,26 +17,26 @@
         <div>
             <label for="db_connection" class="block text-sm font-medium text-gray-700 mb-1">Tipo database</label>
             <select name="db_connection" id="db_connection" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" required>
-                <option value="mysql" {{ old('db_connection', 'mysql') === 'mysql' ? 'selected' : '' }}>MySQL / MariaDB</option>
-                <option value="sqlite" {{ old('db_connection') === 'sqlite' ? 'selected' : '' }}>SQLite</option>
+                <option value="mysql" {{ $conn === 'mysql' ? 'selected' : '' }}>MySQL / MariaDB</option>
+                <option value="sqlite" {{ $conn === 'sqlite' ? 'selected' : '' }}>SQLite</option>
             </select>
         </div>
         <div id="mysql-fields">
             <div>
                 <label for="db_host" class="block text-sm font-medium text-gray-700 mb-1">Host</label>
-                <input type="text" name="db_host" id="db_host" value="{{ old('db_host', '127.0.0.1') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="127.0.0.1">
+                <input type="text" name="db_host" id="db_host" value="{{ $host }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="127.0.0.1">
             </div>
             <div>
                 <label for="db_port" class="block text-sm font-medium text-gray-700 mb-1">Porta</label>
-                <input type="text" name="db_port" id="db_port" value="{{ old('db_port', '3306') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="3306">
+                <input type="text" name="db_port" id="db_port" value="{{ $port }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="3306">
             </div>
             <div>
                 <label for="db_database" class="block text-sm font-medium text-gray-700 mb-1">Nome database</label>
-                <input type="text" name="db_database" id="db_database" value="{{ old('db_database') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="ets_db" required>
+                <input type="text" name="db_database" id="db_database" value="{{ $dbName }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="ets_db" required>
             </div>
             <div>
                 <label for="db_username" class="block text-sm font-medium text-gray-700 mb-1">Utente</label>
-                <input type="text" name="db_username" id="db_username" value="{{ old('db_username') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="root">
+                <input type="text" name="db_username" id="db_username" value="{{ $username }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="root">
             </div>
             <div>
                 <label for="db_password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
@@ -37,7 +46,7 @@
         <div id="sqlite-fields" class="hidden">
             <div>
                 <label for="db_database_sqlite" class="block text-sm font-medium text-gray-700 mb-1">Percorso file database (lascia vuoto per predefinito)</label>
-                <input type="text" name="db_database_sqlite" id="db_database_sqlite" value="{{ old('db_database') }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="{{ database_path('database.sqlite') }}">
+                <input type="text" name="db_database_sqlite" id="db_database_sqlite" value="{{ old('db_database_sqlite', $sqlitePath) }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="{{ database_path('database.sqlite') }}">
             </div>
         </div>
         <div class="pt-2">

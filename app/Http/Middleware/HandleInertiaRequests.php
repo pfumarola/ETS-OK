@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Attachment;
+use App\Providers\AppServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\URL;
@@ -42,22 +43,27 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $logoAttachment = Attachment::forSetting('logo')->first();
         $logoUrl = null;
-        if ($logoAttachment) {
-            $logoUrl = Cache::remember('public.logo.signed_url', self::LOGO_SIGNED_URL_CACHE_TTL, function () use ($logoAttachment) {
-                return URL::temporarySignedRoute(
-                    'public.logo.show',
-                    now()->addMinutes(60),
-                    ['attachment' => $logoAttachment->id]
-                );
-            });
-        }
-        $user = $request->user();
+        $user = null;
         $authMember = null;
-        if ($user && $user->member) {
-            $m = $user->member;
-            $authMember = ['id' => $m->id, 'full_name' => $m->full_name];
+
+        $appKey = config('app.key');
+        if (! empty($appKey) && $appKey !== AppServiceProvider::INSTALL_PLACEHOLDER_KEY) {
+            $logoAttachment = Attachment::forSetting('logo')->first();
+            if ($logoAttachment) {
+                $logoUrl = Cache::remember('public.logo.signed_url', self::LOGO_SIGNED_URL_CACHE_TTL, function () use ($logoAttachment) {
+                    return URL::temporarySignedRoute(
+                        'public.logo.show',
+                        now()->addMinutes(60),
+                        ['attachment' => $logoAttachment->id]
+                    );
+                });
+            }
+            $user = $request->user();
+            if ($user && $user->member) {
+                $m = $user->member;
+                $authMember = ['id' => $m->id, 'full_name' => $m->full_name];
+            }
         }
 
         return [

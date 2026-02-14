@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Encryption\Encrypter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
@@ -11,23 +12,52 @@ use Illuminate\Validation\ValidationException;
 class InstallController extends Controller
 {
     /**
-     * Mostra lo step corrente (database o utente admin).
+     * Mostra lo step corrente: database → SMTP (opzionale) → utente admin.
      */
     public function show(Request $request)
     {
-        if ($request->session()->has('install.db')) {
-            return view('install.admin');
+        if (! $request->session()->has('install.db')) {
+            return view('install.database');
+        }
+        if (! $request->session()->get('install.smtp_seen', false)) {
+            return view('install.smtp');
         }
 
-        return view('install.database');
+        return view('install.admin');
     }
 
     /**
-     * Torna allo step 1 (database) cancellando i dati in sessione.
+     * Mostra il form database (per "Indietro" dallo step SMTP), con dati in sessione se presenti.
+     */
+    public function showDatabaseForm(Request $request)
+    {
+        $prefill = $request->session()->get('install.db');
+        if (! $prefill) {
+            return redirect()->route('install.show');
+        }
+
+        return view('install.database', ['prefill' => $prefill]);
+    }
+
+    /**
+     * Torna allo step precedente: cancella solo SMTP in sessione (da admin si torna a SMTP).
+     * Per tornare da SMTP al form database usare install.database.form.
      */
     public function back(Request $request)
     {
-        $request->session()->forget('install.db');
+        $request->session()->forget('install.smtp');
+        $request->session()->forget('install.smtp_seen');
+
+        return redirect()->route('install.show');
+    }
+
+    /**
+     * Salta lo step SMTP (mantieni default .env).
+     */
+    public function skipSmtp(Request $request)
+    {
+        $request->session()->put('install.smtp_seen', true);
+        $request->session()->forget('install.smtp');
 
         return redirect()->route('install.show');
     }
@@ -55,12 +85,13 @@ class InstallController extends Controller
 
         $validated = $request->validate($rules);
 
+        $sqlitePath = trim($validated['db_database_sqlite'] ?? '');
         $dbConfig = [
             'connection' => $validated['db_connection'],
             'host' => $validated['db_host'] ?? '127.0.0.1',
             'port' => $validated['db_port'] ?? ($connection === 'mysql' ? '3306' : null),
             'database' => $connection === 'sqlite'
-                ? (trim($validated['db_database_sqlite'] ?? '') ?: database_path('database.sqlite'))
+                ? ($sqlitePath !== '' ? self::absoluteSqlitePath($sqlitePath) : database_path('database.sqlite'))
                 : $validated['db_database'],
             'username' => $validated['db_username'] ?? '',
             'password' => $validated['db_password'] ?? '',
@@ -78,7 +109,11 @@ class InstallController extends Controller
                     }
                 }
                 if (! file_exists($path)) {
-                    touch($path);
+                    if (@touch($path) === false) {
+                        throw ValidationException::withMessages([
+                            'db_database' => ['Impossibile creare il file database SQLite. Verifica i permessi della directory.'],
+                        ]);
+                    }
                 }
             }
         }
@@ -86,6 +121,41 @@ class InstallController extends Controller
         $this->testDatabaseConnection($dbConfig);
 
         $request->session()->put('install.db', $dbConfig);
+
+        return redirect()->route('install.show');
+    }
+
+    /**
+     * Salva la configurazione SMTP in sessione (step opzionale).
+     */
+    public function storeSmtp(Request $request)
+    {
+        $validated = $request->validate([
+            'mail_mailer' => 'required|in:smtp,log',
+            'mail_host' => 'nullable|string|max:255',
+            'mail_port' => 'nullable|string|max:10',
+            'mail_scheme' => 'nullable|string|in:tls,ssl',
+            'mail_username' => 'nullable|string|max:255',
+            'mail_password' => 'nullable|string|max:255',
+            'mail_from_address' => 'nullable|string|max:255',
+            'mail_from_name' => 'nullable|string|max:255',
+        ]);
+
+        $request->session()->put('install.smtp_seen', true);
+        if ($validated['mail_mailer'] === 'log') {
+            $request->session()->put('install.smtp', ['mailer' => 'log']);
+        } else {
+            $request->session()->put('install.smtp', [
+                'mailer' => 'smtp',
+                'host' => $validated['mail_host'] ?? '127.0.0.1',
+                'port' => $validated['mail_port'] ?? '587',
+                'scheme' => $validated['mail_scheme'] ?? 'tls',
+                'username' => $validated['mail_username'] ?? '',
+                'password' => $validated['mail_password'] ?? '',
+                'from_address' => $validated['mail_from_address'] ?? '',
+                'from_name' => $validated['mail_from_name'] ?? '',
+            ]);
+        }
 
         return redirect()->route('install.show');
     }
@@ -117,8 +187,12 @@ class InstallController extends Controller
         }
 
         $this->writeEnvDatabase($envPath, $db);
+        $this->writeEnvAppKey($envPath);
+        $smtp = $request->session()->get('install.smtp');
+        if ($smtp) {
+            $this->writeEnvMail($envPath, $smtp);
+        }
         $this->setRuntimeDatabaseConfig($db);
-        Artisan::call('key:generate', ['--force' => true]);
 
         try {
             Artisan::call('migrate', ['--force' => true]);
@@ -220,6 +294,43 @@ class InstallController extends Controller
     }
 
     /**
+     * Scrive APP_KEY nel .env (generata come fa key:generate).
+     * Necessario perché con APP_KEY= vuoto key:generate non trova la riga da sostituire.
+     */
+    private function writeEnvAppKey(string $envPath): void
+    {
+        $cipher = config('app.cipher', 'AES-256-CBC');
+        $key = 'base64:'.base64_encode(Encrypter::generateKey($cipher));
+        $content = file_get_contents($envPath);
+        $content = $this->setEnvVariable($content, 'APP_KEY', $key);
+        file_put_contents($envPath, $content);
+    }
+
+    /**
+     * Scrive le variabili MAIL_* nel file .env (da step SMTP opzionale).
+     */
+    private function writeEnvMail(string $envPath, array $smtp): void
+    {
+        $content = file_get_contents($envPath);
+        $vars = [
+            'MAIL_MAILER' => $smtp['mailer'] ?? 'log',
+        ];
+        if (($smtp['mailer'] ?? '') === 'smtp') {
+            $vars['MAIL_HOST'] = $smtp['host'] ?? '127.0.0.1';
+            $vars['MAIL_PORT'] = $smtp['port'] ?? '587';
+            $vars['MAIL_SCHEME'] = $smtp['scheme'] ?? 'tls';
+            $vars['MAIL_USERNAME'] = $smtp['username'] ?? 'null';
+            $vars['MAIL_PASSWORD'] = $smtp['password'] !== '' ? $this->envValue($smtp['password']) : 'null';
+            $vars['MAIL_FROM_ADDRESS'] = $smtp['from_address'] !== '' ? $this->envValue($smtp['from_address']) : '"hello@example.com"';
+            $vars['MAIL_FROM_NAME'] = $smtp['from_name'] !== '' ? $this->envValue($smtp['from_name']) : '"${APP_NAME}"';
+        }
+        foreach ($vars as $key => $value) {
+            $content = $this->setEnvVariable($content, $key, $value);
+        }
+        file_put_contents($envPath, $content);
+    }
+
+    /**
      * Aggiorna o inserisce le variabili DB nel file .env.
      */
     private function writeEnvDatabase(string $envPath, array $db): void
@@ -264,5 +375,21 @@ class InstallController extends Controller
         }
 
         return $content."\n".$line."\n";
+    }
+
+    /**
+     * Restituisce il percorso assoluto per il file SQLite (richiesto dal connector Laravel).
+     */
+    private static function absoluteSqlitePath(string $path): string
+    {
+        $path = str_replace('\\', '/', trim($path));
+        if ($path === '' || $path === ':memory:') {
+            return database_path('database.sqlite');
+        }
+        if (! str_starts_with($path, '/')) {
+            $path = base_path($path);
+        }
+
+        return $path;
     }
 }
