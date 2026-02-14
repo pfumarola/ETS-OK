@@ -1,0 +1,111 @@
+name: Release zip per hosting
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, bcmath, pdo, dom, fileinfo
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install npm dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Clear Laravel caches
+        run: |
+          php artisan config:clear
+          php artisan route:clear
+
+      - name: Read version from .env.example
+        id: version
+        run: |
+          VERSION=$(grep -E '^APP_VERSION=' .env.example | cut -d= -f2 || echo "0.0.0")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create release zip
+        run: |
+          zip -r release.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "node_modules/*" \
+            -x "tests/*" \
+            -x ".env" \
+            -x ".env.backup" \
+            -x ".env.production" \
+            -x "*.log" \
+            -x ".phpunit.result.cache" \
+            -x ".phpunit.cache/*" \
+            -x ".idea/*" \
+            -x ".vscode/*" \
+            -x ".phpactor.json" \
+            -x "Homestead.json" \
+            -x "Homestead.yaml" \
+            -x "Thumbs.db" \
+            -x ".DS_Store" \
+            -x ".fleet/*" \
+            -x ".nova/*" \
+            -x ".zed/*" \
+            -x ".cursor/*" \
+            -x "auth.json" \
+            -x "storage/*.key" \
+            -x "storage/pail/*" \
+            -x "storage/logs/*" \
+            -x "storage/framework/cache/*" \
+            -x "storage/framework/sessions/*" \
+            -x "storage/framework/views/*" \
+            -x "phpunit.xml" \
+            -x "phpunit.xml.dist"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          body: |
+            Zip pronto per installazione su hosting.
+
+            **Installazione:**
+            1. Estrai l'archivio nella root del sito (document root deve puntare alla cartella `public`).
+            2. Copia `.env.example` in `.env`.
+            3. Visita `/install` per configurare il database e creare l'utente amministratore.
+          files: release.zip
+          replace: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

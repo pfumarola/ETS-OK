@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Attachment;
+use App\Models\ExpenseRefund;
+use App\Models\Incasso;
+use App\Models\Member;
+use App\Models\Receipt;
+use App\Models\Settings;
+use Illuminate\Support\Facades\Storage;
+
+/**
+ * Genera ricevute (PDF) per incassi (quote/donazioni) e rimborsi.
+ */
+class ReceiptService
+{
+    /**
+     * Genera ricevuta per un incasso. Crea record Receipt e salva PDF su storage.
+     */
+    public function generateForIncasso(Incasso $incasso): Receipt
+    {
+        if ($incasso->receipt) {
+            return $incasso->receipt;
+        }
+
+        $member = $incasso->member;
+        if (! $member) {
+            throw new \InvalidArgumentException('L\'incasso deve essere collegato a un socio per emettere ricevuta.');
+        }
+
+        $number = $this->nextReceiptNumber($incasso->paid_at);
+        $issuedAt = $incasso->paid_at->toDateString();
+        if ($incasso->type === Incasso::TYPE_DONAZIONE) {
+            $causale = $incasso->description ?: Settings::get('causale_default_donazione', 'Erogazione liberale');
+        } else {
+            $baseQuota = Settings::get('causale_default_quota', 'Quota associativa');
+            $causale = $incasso->description ?: ($incasso->subscription ? $baseQuota . ' ' . $incasso->subscription->year : $baseQuota);
+        }
+
+        $receipt = Receipt::create([
+            'member_id' => $member->id,
+            'receivable_type' => Incasso::class,
+            'receivable_id' => $incasso->id,
+            'number' => $number,
+            'issued_at' => $issuedAt,
+            'type' => 'liberale',
+        ]);
+
+        $path = $this->savePdf($receipt, $member, $incasso->amount, $causale, $issuedAt);
+        $receipt->update(['file_path' => $path]);
+        $incasso->update(['receipt_issued_at' => $incasso->paid_at]);
+
+        return $receipt->fresh();
+    }
+
+    /**
+     * Genera ricevuta per un rimborso spese.
+     */
+    public function generateForExpenseRefund(ExpenseRefund $refund): Receipt
+    {
+        if ($refund->receipt) {
+            return $refund->receipt;
+        }
+
+        $member = $refund->member;
+        $number = $this->nextReceiptNumber($refund->refund_date);
+        $issuedAt = $refund->refund_date->format('Y-m-d');
+        $causale = Settings::get('causale_default_rimborso', 'Rimborso spese');
+
+        $receipt = Receipt::create([
+            'member_id' => $member->id,
+            'receivable_type' => ExpenseRefund::class,
+            'receivable_id' => $refund->id,
+            'number' => $number,
+            'issued_at' => $issuedAt,
+            'type' => 'rimborso',
+        ]);
+
+        $path = $this->savePdf($receipt, $member, $refund->total, $causale, $issuedAt);
+        $receipt->update(['file_path' => $path]);
+        $refund->update(['receipt_id' => $receipt->id, 'status' => 'stampata']);
+
+        return $receipt->fresh();
+    }
+
+    /**
+     * Numero progressivo annuale per ricevute (es. 2026/0001).
+     */
+    private function nextReceiptNumber($date): string
+    {
+        $year = $date instanceof \DateTimeInterface ? $date->format('Y') : date('Y', strtotime($date));
+        $last = Receipt::whereYear('issued_at', $year)->orderByDesc('id')->first();
+        $seq = $last ? (int) substr($last->number, -4) + 1 : 1;
+        return $year . '/' . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function savePdf(Receipt $receipt, Member $member, $amount, string $causale, string $issuedAt): string
+    {
+        $logoDataUri = Attachment::logoDataUriForPdf();
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.template', [
+            'receipt' => $receipt,
+            'member' => $member,
+            'amount' => $amount,
+            'causale' => $causale,
+            'issued_at' => $issuedAt,
+            'nome_associazione' => Settings::get('nome_associazione', 'Associazione - Ente del Terzo Settore'),
+            'indirizzo_associazione' => Settings::get('indirizzo_associazione', ''),
+            'codice_fiscale_associazione' => Settings::get('codice_fiscale_associazione', ''),
+            'partita_iva_associazione' => Settings::get('partita_iva_associazione', ''),
+            'logo_data_uri' => $logoDataUri,
+        ]);
+        $year = date('Y', strtotime($issuedAt));
+        $dir = "media/receipts/{$year}";
+        Storage::disk('local')->makeDirectory($dir);
+        $path = "{$dir}/{$receipt->id}.pdf";
+        Storage::disk('local')->put($path, $pdf->output());
+        return $path;
+    }
+
+}
