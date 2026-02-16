@@ -103,13 +103,16 @@ class IncassoController extends Controller
             $rules['member_id'] = 'required|exists:members,id';
         } else {
             $rules['member_id'] = 'nullable|exists:members,id';
+            $rules['donor_name'] = 'nullable|string|max:255';
         }
         $request->validate($rules);
 
         $subscriptionId = $request->input('type') === 'donazione' ? null : $request->subscription_id;
+        $donorName = $request->input('type') === 'donazione' ? $request->filled('donor_name') ? trim($request->donor_name) : null : null;
 
         $incasso = Incasso::create([
-            'member_id' => $request->member_id,
+            'member_id' => $request->member_id ?: null,
+            'donor_name' => $donorName,
             'subscription_id' => $subscriptionId,
             'amount' => $request->amount,
             'paid_at' => $request->paid_at,
@@ -126,7 +129,7 @@ class IncassoController extends Controller
             $member = $incasso->member;
             $desc = $incasso->description;
             if ($incasso->type === Incasso::TYPE_DONAZIONE) {
-                $desc = $desc ?: 'Erogazione liberale';
+                $desc = $desc ?: ($incasso->donor_name ? 'Erogazione liberale - ' . $incasso->donor_name : 'Erogazione liberale');
             } else {
                 $desc = $desc ?: ($member ? 'Quota ' . trim($member->cognome . ' ' . $member->nome) : 'Quota associativa');
             }
@@ -142,7 +145,7 @@ class IncassoController extends Controller
             ]);
         }
 
-        if ($request->boolean('issue_receipt') && $incasso->member_id) {
+        if ($request->boolean('issue_receipt') && ($incasso->member_id || $incasso->donor_name)) {
             try {
                 $receiptService->generateForIncasso($incasso);
             } catch (\Throwable $e) {

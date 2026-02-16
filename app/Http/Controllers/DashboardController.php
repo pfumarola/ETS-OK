@@ -9,6 +9,7 @@ use App\Models\Incasso;
 use App\Models\Member;
 use App\Models\Organo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -50,8 +51,11 @@ class DashboardController extends Controller
         $scadenzaEntro = $today->copy()->addDays(90);
 
         // Organi con mandato in scadenza (mandato_da + durata_mesi entro 90 giorni)
-        // Le cariche sociali ereditano la scadenza dall'organo (SQLite non permette HAVING su query non aggregate, usiamo WHERE)
-        $mandatoScadenzaExpr = "date(mandato_da, '+' || durata_mesi || ' months')";
+        // Sintassi diversa per SQLite vs MySQL/MariaDB
+        $driver = DB::connection()->getDriverName();
+        $mandatoScadenzaExpr = $driver === 'sqlite'
+            ? "date(mandato_da, '+' || durata_mesi || ' months')"
+            : 'DATE_ADD(mandato_da, INTERVAL durata_mesi MONTH)';
         $organiInScadenza = Organo::query()
             ->whereNotNull('mandato_da')
             ->whereNotNull('durata_mesi')

@@ -31,6 +31,31 @@ class AppServiceProvider extends ServiceProvider
     {
         if (Config::get('app.key') === self::INSTALL_PLACEHOLDER_KEY || empty(Config::get('app.key'))) {
             Config::set('session.driver', 'file');
+            $nameFromExample = $this->appNameFromEnvExample();
+            if ($nameFromExample !== null) {
+                Config::set('app.name', $nameFromExample);
+            }
         }
+    }
+
+    /**
+     * Legge APP_NAME da .env.example così l'installer mostra il nome corretto (es. "ETS-OK") invece di "Laravel".
+     */
+    private function appNameFromEnvExample(): ?string
+    {
+        $path = base_path('.env.example');
+        if (! is_file($path)) {
+            return null;
+        }
+        $content = @file_get_contents($path);
+        if ($content === false) {
+            return null;
+        }
+        if (preg_match('/^\s*APP_NAME\s*=\s*(.+)$/m', $content, $m)) {
+            $value = trim($m[1], " \t\"'");
+            return $value !== '' ? $value : null;
+        }
+
+        return null;
     }
 }

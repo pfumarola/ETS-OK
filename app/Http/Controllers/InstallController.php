@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class InstallController extends Controller
@@ -139,23 +140,43 @@ class InstallController extends Controller
             'mail_password' => 'nullable|string|max:255',
             'mail_from_address' => 'nullable|string|max:255',
             'mail_from_name' => 'nullable|string|max:255',
+            'skip_smtp_test' => 'nullable|boolean',
         ]);
 
-        $request->session()->put('install.smtp_seen', true);
         if ($validated['mail_mailer'] === 'log') {
+            $request->session()->put('install.smtp_seen', true);
             $request->session()->put('install.smtp', ['mailer' => 'log']);
-        } else {
-            $request->session()->put('install.smtp', [
-                'mailer' => 'smtp',
-                'host' => $validated['mail_host'] ?? '127.0.0.1',
-                'port' => $validated['mail_port'] ?? '587',
-                'scheme' => $validated['mail_scheme'] ?? 'tls',
-                'username' => $validated['mail_username'] ?? '',
-                'password' => $validated['mail_password'] ?? '',
-                'from_address' => $validated['mail_from_address'] ?? '',
-                'from_name' => $validated['mail_from_name'] ?? '',
-            ]);
+            return redirect()->route('install.show');
         }
+
+        $smtp = [
+            'mailer' => 'smtp',
+            'host' => $validated['mail_host'] ?? '127.0.0.1',
+            'port' => $validated['mail_port'] ?? '587',
+            'scheme' => $validated['mail_scheme'] ?? 'tls',
+            'username' => $validated['mail_username'] ?? '',
+            'password' => $validated['mail_password'] ?? '',
+            'from_address' => $validated['mail_from_address'] ?? '',
+            'from_name' => $validated['mail_from_name'] ?? '',
+        ];
+
+        $skipTest = filter_var($validated['skip_smtp_test'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if (! $skipTest) {
+            try {
+                $this->testSmtpConnection($smtp);
+            } catch (ValidationException $e) {
+                throw $e;
+            } catch (\Throwable $e) {
+                $message = $this->smtpTestErrorMessage($e);
+                return redirect()->back()
+                    ->withErrors(['mail_host' => $message])
+                    ->withInput($request->only(array_keys($validated)));
+            }
+        }
+
+        $request->session()->put('install.smtp_seen', true);
+        $request->session()->put('install.smtp', $smtp);
 
         return redirect()->route('install.show');
     }
@@ -294,6 +315,44 @@ class InstallController extends Controller
     }
 
     /**
+     * Testa la connessione SMTP inviando un'email di prova.
+     *
+     * @throws ValidationException se il test fallisce
+     */
+    private function testSmtpConnection(array $smtp): void
+    {
+        $fromAddress = trim($smtp['from_address'] ?? '');
+        $fromName = trim($smtp['from_name'] ?? '');
+        $to = $fromAddress !== '' && filter_var($fromAddress, FILTER_VALIDATE_EMAIL)
+            ? $fromAddress
+            : 'test@example.com';
+
+        $scheme = self::smtpSchemeForTransport($smtp['scheme'] ?? null);
+
+        Config::set('mail.default', 'smtp');
+        Config::set('mail.mailers.smtp', [
+            'transport' => 'smtp',
+            'scheme' => $scheme,
+            'host' => $smtp['host'] ?? '127.0.0.1',
+            'port' => (int) ($smtp['port'] ?? 587),
+            'username' => $smtp['username'] ?? null,
+            'password' => $smtp['password'] ?? null,
+            'timeout' => 10,
+        ]);
+        Config::set('mail.from', [
+            'address' => $fromAddress !== '' ? $fromAddress : 'noreply@example.com',
+            'name' => $fromName !== '' ? $fromName : config('app.name'),
+        ]);
+
+        Mail::raw(
+            "Questo è un messaggio di test dall'installer ETS OK. La configurazione SMTP risulta corretta.",
+            function ($message) use ($to): void {
+                $message->to($to)->subject('Test SMTP – Installazione ETS OK');
+            }
+        );
+    }
+
+    /**
      * Scrive APP_KEY nel .env (generata come fa key:generate).
      * Necessario perché con APP_KEY= vuoto key:generate non trova la riga da sostituire.
      */
@@ -318,7 +377,7 @@ class InstallController extends Controller
         if (($smtp['mailer'] ?? '') === 'smtp') {
             $vars['MAIL_HOST'] = $smtp['host'] ?? '127.0.0.1';
             $vars['MAIL_PORT'] = $smtp['port'] ?? '587';
-            $vars['MAIL_SCHEME'] = $smtp['scheme'] ?? 'tls';
+            $vars['MAIL_SCHEME'] = self::smtpSchemeForTransport($smtp['scheme'] ?? null);
             $vars['MAIL_USERNAME'] = $smtp['username'] ?? 'null';
             $vars['MAIL_PASSWORD'] = $smtp['password'] !== '' ? $this->envValue($smtp['password']) : 'null';
             $vars['MAIL_FROM_ADDRESS'] = $smtp['from_address'] !== '' ? $this->envValue($smtp['from_address']) : '"hello@example.com"';
@@ -375,6 +434,30 @@ class InstallController extends Controller
         }
 
         return $content."\n".$line."\n";
+    }
+
+    /**
+     * Restituisce un messaggio di errore leggibile per il fallimento del test SMTP.
+     */
+    private function smtpTestErrorMessage(\Throwable $e): string
+    {
+        $msg = $e->getMessage();
+        if (stripos($msg, '535') !== false || stripos($msg, 'authentication') !== false || stripos($msg, 'authenticate') !== false) {
+            return 'Il server SMTP ha rifiutato utente o password. Verifica le credenziali oppure spunta "Salva senza testare" per procedere e configurare dopo.';
+        }
+        if (stripos($msg, 'connection') !== false || stripos($msg, 'connect') !== false || stripos($msg, 'timeout') !== false) {
+            return 'Impossibile raggiungere il server SMTP. Verifica host, porta e crittografia, oppure spunta "Salva senza testare".';
+        }
+
+        return 'Test SMTP fallito: ' . $msg;
+    }
+
+    /**
+     * Mappa il valore scelto nel form (tls/ssl) allo scheme richiesto dal mailer: "smtp" o "smtps".
+     */
+    private static function smtpSchemeForTransport(?string $scheme): string
+    {
+        return $scheme === 'ssl' ? 'smtps' : 'smtp';
     }
 
     /**

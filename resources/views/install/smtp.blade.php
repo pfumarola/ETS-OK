@@ -45,6 +45,10 @@
                 <label for="mail_from_name" class="block text-sm font-medium text-gray-700 mb-1">Nome mittente</label>
                 <input type="text" name="mail_from_name" id="mail_from_name" value="{{ old('mail_from_name', config('app.name')) }}" class="w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="{{ config('app.name') }}">
             </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="skip_smtp_test" id="skip_smtp_test" value="1" {{ old('skip_smtp_test') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <label for="skip_smtp_test" class="text-sm text-gray-600">Salva senza testare (utile se le credenziali vanno verificate dopo)</label>
+            </div>
         </div>
         <div class="pt-2 flex gap-2">
             <a href="{{ route('install.database.form') }}" class="flex-1 py-2.5 px-4 rounded-lg font-medium text-center text-gray-700 bg-gray-100 hover:bg-gray-200">Indietro</a>

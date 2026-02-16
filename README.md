@@ -42,10 +42,9 @@ Ruoli predefiniti: **admin**, **contabile**, **segreteria**, **socio** (con area
 
 1. Scarica l’ultima [release](https://github.com/pfumarola/ETS-OK/releases) (file `.zip`).
 2. Estrai l’archivio nella root del sito; il **document root** del server deve puntare alla cartella `public`.
-3. Copia `.env.example` in `.env`.
-4. Apri nel browser l’URL di installazione: **`/install`**.
-5. Completa il wizard: configurazione database (MySQL o SQLite) e creazione dell’utente amministratore.
-6. Accedi con le credenziali inserite.
+3. Apri nel browser l’URL di installazione: **`/install`**.
+4. Completa il wizard: configurazione database (MySQL o SQLite) e creazione dell’utente amministratore.
+5. Accedi con le credenziali inserite.
 
 ### Da sorgente (sviluppo)
 

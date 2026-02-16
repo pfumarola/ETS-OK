@@ -25,8 +25,9 @@ class ReceiptService
         }
 
         $member = $incasso->member;
-        if (! $member) {
-            throw new \InvalidArgumentException('L\'incasso deve essere collegato a un socio per emettere ricevuta.');
+        $recipientName = $incasso->donor_name;
+        if (! $member && ! $recipientName) {
+            throw new \InvalidArgumentException('Per emettere ricevuta l\'incasso deve avere un socio/donatore in anagrafica o un donatore inserito a mano.');
         }
 
         $number = $this->nextReceiptNumber($incasso->paid_at);
@@ -39,7 +40,8 @@ class ReceiptService
         }
 
         $receipt = Receipt::create([
-            'member_id' => $member->id,
+            'member_id' => $member?->id,
+            'recipient_name' => $recipientName ?: null,
             'receivable_type' => Incasso::class,
             'receivable_id' => $incasso->id,
             'number' => $number,
@@ -47,7 +49,7 @@ class ReceiptService
             'type' => 'liberale',
         ]);
 
-        $path = $this->savePdf($receipt, $member, $incasso->amount, $causale, $issuedAt);
+        $path = $this->savePdf($receipt, $member, $recipientName, $incasso->amount, $causale, $issuedAt);
         $receipt->update(['file_path' => $path]);
         $incasso->update(['receipt_issued_at' => $incasso->paid_at]);
 
@@ -77,7 +79,7 @@ class ReceiptService
             'type' => 'rimborso',
         ]);
 
-        $path = $this->savePdf($receipt, $member, $refund->total, $causale, $issuedAt);
+        $path = $this->savePdf($receipt, $member, null, $refund->total, $causale, $issuedAt);
         $receipt->update(['file_path' => $path]);
         $refund->update(['receipt_id' => $receipt->id, 'status' => 'stampata']);
 
@@ -95,13 +97,18 @@ class ReceiptService
         return $year . '/' . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 
-    private function savePdf(Receipt $receipt, Member $member, $amount, string $causale, string $issuedAt): string
+    /**
+     * @param  Member|null  $member  Socio/donatore in anagrafica (null se donatore inserito a mano)
+     * @param  string|null  $recipientName  Nome destinatario per ricevuta senza socio (donatore a mano)
+     */
+    private function savePdf(Receipt $receipt, ?Member $member, ?string $recipientName, $amount, string $causale, string $issuedAt): string
     {
         $logoDataUri = Attachment::logoDataUriForPdf();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.template', [
             'receipt' => $receipt,
             'member' => $member,
+            'recipient_name' => $recipientName,
             'amount' => $amount,
             'causale' => $causale,
             'issued_at' => $issuedAt,

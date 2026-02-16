@@ -31,7 +31,7 @@ defineProps({ incasso: Object });
                         <dt class="text-sm text-gray-500 dark:text-gray-400">{{ incasso.type === 'donazione' ? 'Donatore' : 'Socio' }}</dt>
                         <dd>
                             <Link v-if="incasso.member" :href="route('members.show', incasso.member.id)" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ incasso.member.cognome }} {{ incasso.member.nome }}</Link>
-                            <template v-else>{{ incasso.type === 'donazione' ? 'Anonimo' : '—' }}</template>
+                            <template v-else>{{ incasso.donor_name || (incasso.type === 'donazione' ? 'Anonimo' : '—') }}</template>
                         </dd>
                     </div>
                     <div><dt class="text-sm text-gray-500 dark:text-gray-400">Importo</dt><dd class="font-medium">€ {{ Number(incasso.amount).toFixed(2) }}</dd></div>

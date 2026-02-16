@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class Receipt extends Model
 {
-    protected $fillable = ['member_id', 'receivable_type', 'receivable_id', 'number', 'issued_at', 'file_path', 'type'];
+    protected $fillable = ['member_id', 'recipient_name', 'receivable_type', 'receivable_id', 'number', 'issued_at', 'file_path', 'type'];
 
     protected function casts(): array
     {

@@ -36,6 +36,15 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
+      - name: Read version and app name from .env.example
+        id: env-example
+        run: |
+          VERSION=$(grep -E '^APP_VERSION=' .env.example | cut -d= -f2 | xargs || echo "0.0.0")
+          APP_NAME=$(grep -E '^APP_NAME=' .env.example | cut -d= -f2- | tr -d '"' | xargs || echo "ETS-OK")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "app_name=${APP_NAME}" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -43,6 +52,8 @@ jobs:
           cache: 'npm'
 
       - name: Install npm dependencies and build
+        env:
+          VITE_APP_NAME: ${{ steps.env-example.outputs.app_name }}
         run: |
           npm ci
           npm run build
@@ -52,16 +63,11 @@ jobs:
           php artisan config:clear
           php artisan route:clear
 
-      - name: Read version from .env.example
-        id: version
-        run: |
-          VERSION=$(grep -E '^APP_VERSION=' .env.example | cut -d= -f2 || echo "0.0.0")
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
-
       - name: Create release zip
+        env:
+          VERSION: ${{ steps.env-example.outputs.version }}
         run: |
-          zip -r release.zip . \
+          zip -r ets-ok-${VERSION}.zip . \
             -x ".git/*" \
             -x ".github/*" \
             -x "node_modules/*" \
@@ -96,16 +102,15 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Release ${{ steps.version.outputs.tag }}
+          tag_name: ${{ steps.env-example.outputs.tag }}
+          name: Release ${{ steps.env-example.outputs.tag }}
           body: |
             Zip pronto per installazione su hosting.
 
             **Installazione:**
             1. Estrai l'archivio nella root del sito (document root deve puntare alla cartella `public`).
-            2. Copia `.env.example` in `.env`.
-            3. Visita `/install` per configurare il database e creare l'utente amministratore.
-          files: release.zip
+            2. Visita `/install` per configurare il database e creare l'utente amministratore.
+          files: ets-ok-${{ steps.env-example.outputs.version }}.zip
           replace: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

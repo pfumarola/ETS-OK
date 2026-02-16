@@ -18,6 +18,7 @@ class Incasso extends Model
 
     protected $fillable = [
         'member_id',
+        'donor_name',
         'subscription_id',
         'amount',
         'paid_at',

@@ -25,12 +25,16 @@
     <p>Ricevuta liberale / Quota associativa</p>
 
     <table>
+        @if($member)
         <tr><th>Destinatario</th><td>{{ $member->cognome }} {{ $member->nome }}</td></tr>
         @if($member->codice_fiscale)
         <tr><th>Codice fiscale</th><td>{{ $member->codice_fiscale }}</td></tr>
         @endif
         @if($member->indirizzo)
         <tr><th>Indirizzo</th><td>{{ $member->indirizzo }}</td></tr>
+        @endif
+        @elseif(!empty($recipient_name))
+        <tr><th>Destinatario</th><td>{{ $recipient_name }}</td></tr>
         @endif
         <tr><th>Causale</th><td>{{ $causale }}</td></tr>
         <tr><th>Importo</th><td class="amount">€ {{ number_format((float) $amount, 2, ',', '.') }}</td></tr>

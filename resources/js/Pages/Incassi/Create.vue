@@ -24,7 +24,9 @@ const props = defineProps({
 
 const form = useForm({
     type: props.preselectedType,
+    donor_mode: props.preselectedType === 'donazione' ? (props.preselectedMember?.id ? 'member' : 'manual') : 'member',
     member_id: props.preselectedMember?.id ?? (props.preselectedType === 'donazione' ? '' : ''),
+    donor_name: '',
     subscription_id: props.preselectedType === 'donazione' ? '' : (props.preselectedSubscriptionId ?? ''),
     amount: props.preselectedAmount ?? (props.preselectedType === 'quota' && props.quota_annuale != null ? String(Number(props.quota_annuale).toFixed(2)) : ''),
     paid_at: new Date().toISOString().slice(0, 10),
@@ -48,6 +50,14 @@ watch(() => form.type, (newType) => {
 });
 
 const submitLabel = computed(() => form.type === 'donazione' ? 'Registra donazione' : 'Registra incasso');
+
+function onSubmit() {
+    if (form.type === 'donazione') {
+        if (form.donor_mode === 'manual') form.member_id = '';
+        else form.donor_name = '';
+    }
+    form.post(route('incassi.store'));
+}
 </script>
 
 <template>
@@ -58,7 +68,7 @@ const submitLabel = computed(() => form.type === 'donazione' ? 'Registra donazio
         </template>
 
         <div class="py-6 max-w-2xl mx-auto sm:px-6">
-            <form @submit.prevent="form.post(route('incassi.store'))" class="space-y-4 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <form @submit.prevent="onSubmit" class="space-y-4 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <div>
                     <InputLabel for="type" value="Tipo" />
                     <select id="type" v-model="form.type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
@@ -66,17 +76,53 @@ const submitLabel = computed(() => form.type === 'donazione' ? 'Registra donazio
                         <option value="donazione">Donazione</option>
                     </select>
                 </div>
-                <div>
-                    <InputLabel for="member_id" :value="form.type === 'quota' ? 'Socio *' : 'Donatore (opzionale)'" />
-                    <SearchableMemberSelect
-                        id="member_id"
-                        v-model="form.member_id"
-                        :members="members"
-                        :placeholder="form.type === 'quota' ? 'Seleziona socio' : 'Seleziona donatore'"
-                        :empty-option="form.type === 'donazione' ? 'Anonimo' : ''"
-                    />
-                    <InputError class="mt-1" :message="form.errors.member_id" />
-                </div>
+                <template v-if="form.type === 'quota'">
+                    <div>
+                        <InputLabel for="member_id" value="Socio *" />
+                        <SearchableMemberSelect
+                            id="member_id"
+                            v-model="form.member_id"
+                            :members="members"
+                            placeholder="Seleziona socio"
+                        />
+                        <InputError class="mt-1" :message="form.errors.member_id" />
+                    </div>
+                </template>
+                <template v-else>
+                    <div>
+                        <InputLabel value="Donatore" />
+                        <div class="mt-1 flex gap-4 items-center">
+                            <label class="inline-flex items-center">
+                                <input v-model="form.donor_mode" type="radio" value="member" class="rounded border-gray-300 dark:border-gray-700" />
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Da anagrafica</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input v-model="form.donor_mode" type="radio" value="manual" class="rounded border-gray-300 dark:border-gray-700" />
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Inserisci a mano</span>
+                            </label>
+                        </div>
+                        <div v-if="form.donor_mode === 'member'" class="mt-2">
+                            <SearchableMemberSelect
+                                id="member_id"
+                                v-model="form.member_id"
+                                :members="members"
+                                placeholder="Seleziona donatore"
+                                empty-option="Anonimo"
+                            />
+                            <InputError class="mt-1" :message="form.errors.member_id" />
+                        </div>
+                        <div v-else class="mt-2">
+                            <TextInput
+                                id="donor_name"
+                                v-model="form.donor_name"
+                                type="text"
+                                class="block w-full"
+                                placeholder="Nome e cognome del donatore (opzionale)"
+                            />
+                            <InputError class="mt-1" :message="form.errors.donor_name" />
+                        </div>
+                    </div>
+                </template>
                 <div v-if="form.type === 'quota' && subscriptionsForMember.length" class="subscription-block">
                     <InputLabel for="subscription_id" value="Iscrizione (opzionale)" />
                     <select id="subscription_id" v-model="form.subscription_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
@@ -111,7 +157,7 @@ const submitLabel = computed(() => form.type === 'donazione' ? 'Registra donazio
                     <input id="genera_prima_nota" v-model="form.genera_prima_nota" type="checkbox" class="rounded border-gray-300 dark:border-gray-700 shadow-sm" />
                     <label for="genera_prima_nota" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Genera movimento in prima nota</label>
                 </div>
-                <div v-if="form.type === 'quota' || form.member_id" class="flex items-center">
+                <div v-if="form.type === 'quota' || form.member_id || (form.type === 'donazione' && form.donor_name)" class="flex items-center">
                     <input id="issue_receipt" v-model="form.issue_receipt" type="checkbox" class="rounded border-gray-300 dark:border-gray-700 shadow-sm" />
                     <label for="issue_receipt" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Emetti ricevuta</label>
                 </div>

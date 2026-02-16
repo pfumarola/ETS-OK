@@ -12,6 +12,7 @@ defineProps({
     canResetPassword: Boolean,
     status: String,
     logo_url: String,
+    flash: Object,
 });
 
 const form = useForm({
@@ -48,6 +49,10 @@ const submit = () => {
 
         <div v-if="status" class="mb-4 font-medium text-sm text-green-600 dark:text-green-400">
             {{ status }}
+        </div>
+
+        <div v-if="flash?.message" class="mb-4 font-medium text-sm text-amber-600 dark:text-amber-400">
+            {{ flash.message }}
         </div>
 
         <form @submit.prevent="submit">

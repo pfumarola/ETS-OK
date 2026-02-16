@@ -77,7 +77,7 @@ const search = () => router.get(route('incassi.index'), form);
                                     <span v-else-if="i.type === 'donazione'" class="inline-flex px-2 py-0.5 text-xs font-medium rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">Donazione</span>
                                     <span v-else>—</span>
                                 </td>
-                                <td class="px-4 py-2">{{ i.member ? i.member.cognome + ' ' + i.member.nome : (i.type === 'donazione' ? 'Anonimo' : '—') }}</td>
+                                <td class="px-4 py-2">{{ i.member ? i.member.cognome + ' ' + i.member.nome : (i.donor_name || (i.type === 'donazione' ? 'Anonimo' : '—')) }}</td>
                                 <td class="px-4 py-2">€ {{ Number(i.amount).toFixed(2) }}</td>
                                 <td class="px-4 py-2">{{ i.payment_method?.name ?? '—' }}</td>
                                 <td class="px-4 py-2">{{ i.receipt ? i.receipt.number : '—' }}</td>

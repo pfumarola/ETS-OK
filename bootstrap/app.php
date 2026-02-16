@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -31,5 +32,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->respond(function ($response, $e, $request) {
+            if ($e instanceof HttpException && $e->getStatusCode() === 419) {
+                return redirect()->back()
+                    ->with('flash', ['type' => 'warning', 'message' => 'La sessione è scaduta. Ricarica la pagina e riprova ad accedere.']);
+            }
+            return $response;
+        });
     })->create();
