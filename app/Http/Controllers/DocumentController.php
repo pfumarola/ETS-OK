@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\Document;
 use App\Models\Template;
 use App\Services\AttachmentService;
+use App\Services\PlaceholderResolver;
 use App\Support\PdfLetterheadData;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -47,6 +48,12 @@ class DocumentController extends Controller
             'contenuto' => 'nullable|string',
         ]);
 
+        $context = ['data' => \Carbon\Carbon::parse($validated['data'])];
+        $validated['titolo'] = PlaceholderResolver::resolve($validated['titolo'] ?? '', $context);
+        $validated['contenuto'] = PlaceholderResolver::resolve(
+            $validated['contenuto'] ?? '',
+            $context
+        );
         $document = Document::create($validated);
 
         return redirect()->route('documents.show', $document)
@@ -79,6 +86,12 @@ class DocumentController extends Controller
             'contenuto' => 'nullable|string',
         ]);
 
+        $context = ['data' => \Carbon\Carbon::parse($validated['data'])];
+        $validated['titolo'] = PlaceholderResolver::resolve($validated['titolo'] ?? '', $context);
+        $validated['contenuto'] = PlaceholderResolver::resolve(
+            $validated['contenuto'] ?? '',
+            $context
+        );
         $document->update($validated);
 
         return redirect()->route('documents.show', $document)
@@ -98,7 +111,7 @@ class DocumentController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('documents.pdf', [
             'document' => $document,
             'letterhead' => PdfLetterheadData::data(),
-        ]);
+        ])->setOption('enable_php', true);
 
         $safeTitle = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $document->titolo ?? '') ?: 'documento';
         $slug = Str::slug(mb_substr($safeTitle, 0, 50));

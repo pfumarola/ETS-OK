@@ -114,6 +114,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
 - **Services**:  
   - `app/Services/AttachmentService.php` – salvataggio allegati (path `media/attachments/{context}/...`, record `Attachment`)  
+  - `app/Services/PlaceholderResolver.php` – sostituzione placeholder `{{key}}` e `{{ora+30m}}` nel contenuto di verbali/documenti al salvataggio. Placeholder: `nome-associazione`, `data`, `ora`, `ora+30m`/`ora+1h20m` (offset), `n-soci`, `anno`/`anno+1` (offset anni), `presidente`, `segretario`, `tesoriere`, `sede`, `sede-legale`, `sede-operativa` (da Location per tipo), `direttivo`, `richieste-soci`. I template non vengono risolti.  
   - `app/Services/ReceiptService.php` – gestione ricevute  
   - `app/Services/RendicontoCassaService.php` – rendiconto di cassa (legge prima nota per `rendiconto_code`, struttura da schema MOD_D)  
   - `app/Services/RendicontoCassaSchema.php` – schema hardcoded Modello D, voci selezionabili, code→label
@@ -151,6 +152,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 | **Menu laterale** | `resources/js/Layouts/AppLayout.vue` – sezioni e link in base a `route().current()` e `userRoles`. |
 | **Template documenti** | `app/Models/Template.php`, `App\Http\Controllers\TemplateController`, `resources/js/Pages/Templates/`, route `templates.*`. |
 | **Sito pubblico** | `App\Http\Controllers\PublicSiteController`, `resources/js/Pages/Public/Home.vue`, route `home`. Download pubblici: `PublicDownloadController`, route signed `public.*`. |
+| **Placeholder nei documenti/verbali** | `app/Services/PlaceholderResolver.php` (risoluzione al salvataggio); inserimento da toolbar in `resources/js/Components/RichTextEditor.vue` (dropdown «Placeholder»). |
 | **Messaggi flash** | Backend: `with('flash', ['type' => 'success'|'error'|'info', 'message' => '...'])`. Frontend: componente `FlashToast` e `page.props.flash`. |
 | **Ruoli e permessi** | Middleware `app/Http/Middleware/EnsureUserHasRole.php`, registrazione in `bootstrap/app.php`, seed in `database/seeders/RoleSeeder.php`. |
 

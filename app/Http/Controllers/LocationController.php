@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Location;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class LocationController extends Controller
@@ -21,7 +22,8 @@ class LocationController extends Controller
 
     public function create()
     {
-        return Inertia::render('Locations/Create');
+        $hasLegalLocation = Location::where('tipo', Location::TIPO_LEGALE)->exists();
+        return Inertia::render('Locations/Create', ['hasLegalLocation' => $hasLegalLocation]);
     }
 
     public function store(Request $request)
@@ -29,14 +31,22 @@ class LocationController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'nullable|string|max:500',
+            'tipo' => 'required|in:legale,operativa',
         ]);
+        if ($data['tipo'] === Location::TIPO_LEGALE && Location::where('tipo', Location::TIPO_LEGALE)->exists()) {
+            throw ValidationException::withMessages(['tipo' => 'Esiste già una sede legale. Può esserci solo una sede legale.']);
+        }
         Location::create($data);
         return redirect()->route('locations.index')->with('flash', ['type' => 'success', 'message' => 'Sede creata.']);
     }
 
     public function edit(Location $location)
     {
-        return Inertia::render('Locations/Edit', ['location' => $location]);
+        $hasOtherLegalLocation = Location::where('tipo', Location::TIPO_LEGALE)->where('id', '!=', $location->id)->exists();
+        return Inertia::render('Locations/Edit', [
+            'location' => $location,
+            'hasOtherLegalLocation' => $hasOtherLegalLocation,
+        ]);
     }
 
     public function update(Request $request, Location $location)
@@ -44,7 +54,14 @@ class LocationController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'nullable|string|max:500',
+            'tipo' => 'required|in:legale,operativa',
         ]);
+        if ($data['tipo'] === Location::TIPO_LEGALE) {
+            $otherLegal = Location::where('tipo', Location::TIPO_LEGALE)->where('id', '!=', $location->id)->exists();
+            if ($otherLegal) {
+                throw ValidationException::withMessages(['tipo' => 'Esiste già una sede legale. Può esserci solo una sede legale.']);
+            }
+        }
         $location->update($data);
         return redirect()->route('locations.index')->with('flash', ['type' => 'success', 'message' => 'Sede aggiornata.']);
     }

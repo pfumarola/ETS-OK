@@ -15,6 +15,7 @@ import {
     Bars3BottomRightIcon,
     Bars4Icon,
     ChevronDownIcon,
+    DocumentTextIcon,
 } from '@heroicons/vue/24/outline';
 
 const FONT_SIZES = [
@@ -29,6 +30,26 @@ const BLOCK_TYPES = [
     { label: 'Titolo 1', type: 'heading', level: 1 },
     { label: 'Titolo 2', type: 'heading', level: 2 },
     { label: 'Titolo 3', type: 'heading', level: 3 },
+];
+
+const PLACEHOLDERS = [
+    { value: '{{nome-associazione}}', label: 'Nome associazione' },
+    { value: '{{data}}', label: 'Data' },
+    { value: '{{ora}}', label: 'Ora' },
+    { value: '{{ora+30m}}', label: 'Ora +30 min' },
+    { value: '{{ora+1h}}', label: 'Ora +1 h' },
+    { value: '{{ora+1h20m}}', label: 'Ora +1h 20min' },
+    { value: '{{n-soci}}', label: 'Numero soci attivi' },
+    { value: '{{anno}}', label: 'Anno' },
+    { value: '{{anno+1}}', label: 'Anno successivo' },
+    { value: '{{presidente}}', label: 'Presidente' },
+    { value: '{{segretario}}', label: 'Segretario' },
+    { value: '{{tesoriere}}', label: 'Tesoriere' },
+    { value: '{{sede}}', label: 'Sede (indirizzo)' },
+    { value: '{{sede-legale}}', label: 'Sede legale' },
+    { value: '{{sede-operativa}}', label: 'Sede operativa' },
+    { value: '{{direttivo}}', label: 'Direttivo (nome e cariche)' },
+    { value: '{{richieste-soci}}', label: 'Richieste soci (aspiranti)' },
 ];
 
 const props = defineProps({
@@ -70,8 +91,10 @@ const currentBlockLabel = computed(() => {
 const currentFontSize = ref('14px');
 const blockDropdownOpen = ref(false);
 const fontDropdownOpen = ref(false);
+const placeholderDropdownOpen = ref(false);
 const blockDropdownRef = ref(null);
 const fontDropdownRef = ref(null);
+const placeholderDropdownRef = ref(null);
 
 function setBlockType(block) {
     if (!editor.value) return;
@@ -99,6 +122,25 @@ function isAlignActive(align) {
     return editor.value?.isActive({ textAlign: align });
 }
 
+function insertPlaceholder(value) {
+    if (!editor.value) return;
+    editor.value.chain().focus().insertContent(value).run();
+    placeholderDropdownOpen.value = false;
+}
+
+function closeDropdownsIfOutside(e) {
+    if (
+        blockDropdownRef.value?.contains(e.target) ||
+        fontDropdownRef.value?.contains(e.target) ||
+        placeholderDropdownRef.value?.contains(e.target)
+    ) {
+        return;
+    }
+    blockDropdownOpen.value = false;
+    fontDropdownOpen.value = false;
+    placeholderDropdownOpen.value = false;
+}
+
 watch(() => props.modelValue, (val) => {
     if (!editor.value) return;
     const current = editor.value.getHTML();
@@ -117,11 +159,6 @@ watch(editor, (e) => {
     e.on('transaction', updateFontSizeDisplay);
 }, { immediate: true });
 
-function closeDropdownsIfOutside(e) {
-    if (blockDropdownRef.value?.contains(e.target) || fontDropdownRef.value?.contains(e.target)) return;
-    blockDropdownOpen.value = false;
-    fontDropdownOpen.value = false;
-}
 
 onMounted(() => {
     document.addEventListener('click', closeDropdownsIfOutside);
@@ -277,6 +314,36 @@ onBeforeUnmount(() => {
             >
                 <NumberedListIcon class="size-4" aria-hidden="true" />
             </button>
+
+            <span class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" aria-hidden="true" />
+
+            <!-- Inserisci placeholder -->
+            <div ref="placeholderDropdownRef" class="relative">
+                <button
+                    type="button"
+                    :class="[placeholderDropdownOpen ? 'bg-gray-200 dark:bg-gray-600' : '']"
+                    class="inline-flex items-center gap-1 px-2 py-1.5 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm"
+                    title="Inserisci placeholder"
+                    @click.stop="blockDropdownOpen = false; fontDropdownOpen = false; placeholderDropdownOpen = !placeholderDropdownOpen"
+                >
+                    <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
+                    <span class="hidden sm:inline">Placeholder</span>
+                    <ChevronDownIcon class="size-4 shrink-0" aria-hidden="true" />
+                </button>
+                <div v-show="placeholderDropdownOpen" class="absolute left-0 top-full mt-0.5 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-20 min-w-[220px] max-h-[280px] overflow-y-auto">
+                    <button
+                        v-for="ph in PLACEHOLDERS"
+                        :key="ph.value"
+                        type="button"
+                        class="w-full text-left px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        :title="ph.label"
+                        @click.stop="insertPlaceholder(ph.value)"
+                    >
+                        <span class="font-mono text-xs">{{ ph.value }}</span>
+                        <span class="block text-xs text-gray-500 dark:text-gray-400 truncate">{{ ph.label }}</span>
+                    </button>
+                </div>
+            </div>
 
             <span class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" aria-hidden="true" />
             <slot name="toolbar-actions" :editor="editor" />

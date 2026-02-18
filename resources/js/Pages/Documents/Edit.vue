@@ -22,6 +22,7 @@ const form = useForm({
 const showTemplateModal = ref(false);
 
 function useTemplate(template) {
+    form.titolo = template.nome ?? '';
     form.contenuto = template.contenuto ?? '';
     showTemplateModal.value = false;
 }

@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\Verbale;
 use App\Models\Template;
 use App\Services\AttachmentService;
+use App\Services\PlaceholderResolver;
 use App\Support\PdfLetterheadData;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -97,6 +98,12 @@ class VerbaleController extends Controller
             ],
         ]);
 
+        $context = ['data' => \Carbon\Carbon::parse($validated['data'])];
+        $validated['titolo'] = PlaceholderResolver::resolve($validated['titolo'] ?? '', $context);
+        $validated['contenuto'] = PlaceholderResolver::resolve(
+            $validated['contenuto'] ?? '',
+            $context
+        );
         $verbale = Verbale::create(array_merge($validated, ['stato' => Verbale::STATO_BOZZA]));
 
         return redirect()->route('verbali.show', $verbale)
@@ -128,7 +135,7 @@ class VerbaleController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('verbali.pdf', [
             'verbale' => $verbale,
             'letterhead' => PdfLetterheadData::data(),
-        ]);
+        ])->setOption('enable_php', true);
 
         $safeTitle = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $verbale->titolo) ?: 'verbale';
         $slug = Str::slug(mb_substr($safeTitle, 0, 50));
@@ -189,6 +196,12 @@ class VerbaleController extends Controller
             ],
         ]);
 
+        $context = ['data' => \Carbon\Carbon::parse($validated['data'])];
+        $validated['titolo'] = PlaceholderResolver::resolve($validated['titolo'] ?? '', $context);
+        $validated['contenuto'] = PlaceholderResolver::resolve(
+            $validated['contenuto'] ?? '',
+            $context
+        );
         $verbale->update($validated);
 
         return redirect()->route('verbali.show', $verbale)

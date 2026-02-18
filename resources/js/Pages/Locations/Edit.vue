@@ -7,11 +7,12 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
-const props = defineProps({ location: Object });
+const props = defineProps({ location: Object, hasOtherLegalLocation: Boolean });
 
 const form = useForm({
     name: props.location.name ?? '',
     address: props.location.address ?? '',
+    tipo: props.location.tipo ?? 'operativa',
 });
 </script>
 
@@ -36,6 +37,15 @@ const form = useForm({
                     <InputLabel for="address" value="Indirizzo" />
                     <TextInput id="address" v-model="form.address" class="mt-1 block w-full" />
                     <InputError class="mt-1" :message="form.errors.address" />
+                </div>
+                <div>
+                    <InputLabel for="tipo" value="Tipo *" />
+                    <select id="tipo" v-model="form.tipo" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="operativa">Operativa</option>
+                        <option value="legale" :disabled="hasOtherLegalLocation">Legale</option>
+                    </select>
+                    <p v-if="hasOtherLegalLocation" class="mt-1 text-sm text-amber-600 dark:text-amber-400">Esiste già un'altra sede legale. Può esserci solo una sede legale.</p>
+                    <InputError class="mt-1" :message="form.errors.tipo" />
                 </div>
                 <div class="flex gap-2">
                     <PrimaryButton type="submit" :disabled="form.processing"><PencilSquareIcon class="size-4 me-2" aria-hidden="true" />Salva modifiche</PrimaryButton>

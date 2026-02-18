@@ -41,5 +41,6 @@
     <div class="footer">
         Documento generato il {{ now()->format('d/m/Y H:i') }}.
     </div>
+    @include('pdf.footer-pagination')
 </body>
 </html>

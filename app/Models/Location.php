@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Location extends Model
 {
-    protected $fillable = ['name', 'address'];
+    public const TIPO_LEGALE = 'legale';
+    public const TIPO_OPERATIVA = 'operativa';
+
+    protected $fillable = ['name', 'address', 'tipo'];
 
     public function warehouses(): HasMany
     {

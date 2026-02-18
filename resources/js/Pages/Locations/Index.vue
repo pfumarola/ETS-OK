@@ -31,6 +31,7 @@ function elimina(id) {
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nome</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Indirizzo</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Magazzini</th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Azioni</th>
@@ -39,6 +40,7 @@ function elimina(id) {
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="loc in locations.data" :key="loc.id">
                                 <td class="px-4 py-2">{{ loc.name }}</td>
+                                <td class="px-4 py-2">{{ loc.tipo === 'legale' ? 'Legale' : 'Operativa' }}</td>
                                 <td class="px-4 py-2">{{ loc.address || '—' }}</td>
                                 <td class="px-4 py-2">{{ loc.warehouses_count ?? 0 }}</td>
                                 <td class="px-4 py-2 text-right">
