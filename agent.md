@@ -9,13 +9,13 @@ Documentazione per orientarsi rapidamente nella codebase. **ETS OK** è il gesti
 Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
 - **Soci e volontari**: anagrafica, tipi socio, stati (domanda, ammissione, cessazione, decesso, morosità, dimissioni, esclusione), libro soci
-- **Cassa**: incassi (quote e donazioni), ricevute, rimborsi spese (approvazione → contabilizzazione automatica: una voce prima nota per riga; descrizione = descrizione riga + riferimento rimborso, es. «Rimborso spese #5»), fatture e invio SDI
+- **Cassa**: incassi (quote e donazioni), ricevute, rimborsi spese (approvazione → contabilizzazione automatica: una voce prima nota per riga; descrizione = descrizione riga + riferimento rimborso, es. «Rimborso spese #5»)
 - **Contabilità**: voci del rendiconto (Modello D, schema fisso in config), prima nota, report contabili, rendiconto di cassa (PDF)
 - **Organi e votazioni**: organi, cariche sociali, incarichi, elezioni, candidature, voti
 - **Patrimonio**: immobili e beni, magazzini, ubicazioni, articoli
 - **Documenti**: verbali, documenti, allegati
 - **Eventi**: eventi e iscrizioni
-- **Impostazioni**: nome associazione, logo, quote, P.IVA, causali, email di test
+- **Impostazioni**: nome associazione, logo, intestazione/carta intestata (letterhead), quote, P.IVA, causali, email di test, sito pubblico (sezioni e sfondi)
 
 ---
 
@@ -23,8 +23,8 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
 | Livello | Tecnologie |
 |--------|------------|
-| **Backend** | PHP 8.2+, Laravel 12, Laravel Jetstream (auth), Laravel Fortify, Sanctum, barryvdh/laravel-dompdf |
-| **Frontend** | Vue 3 (Composition API, `<script setup>`), Inertia.js 2, Vite 7, Tailwind CSS 3, Heroicons, Ziggy (route) |
+| **Backend** | PHP 8.4+, Laravel 12, Laravel Jetstream (auth), Laravel Fortify, Sanctum, barryvdh/laravel-dompdf |
+| **Frontend** | Vue 3 (Composition API, `<script setup>`), Inertia.js 2, Vite 7, Tailwind CSS 3 (@tailwindcss/vite), Heroicons, Ziggy (route), TipTap (editor) |
 | **Database** | Configurabile (MySQL ecc.); migrations in `database/migrations/` |
 | **Test** | Pest 4, pest-plugin-laravel, Laravel Pail |
 
@@ -37,7 +37,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
   - `Models/` – Eloquent  
   - `Http/Middleware/` – HandleInertiaRequests, EnsureUserHasRole  
   - `Http/Requests/` – Form Request (es. StoreMemberRequest, UpdateMemberRequest)  
-  - `Services/` – InvoiceSdiService, ReceiptService, RendicontoCassaService  
+  - `Services/` – AttachmentService, ReceiptService, RendicontoCassaService, RendicontoCassaSchema  
   - `Actions/` – Fortify/Jetstream (auth, profilo)  
   - `Policies/` – autorizzazioni (se usate)
 
@@ -47,11 +47,14 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
   - `Layouts/AppLayout.vue` – layout principale con menu laterale  
   - `Composables/` – es. `useTheme.js`
 
-- **Route**: `routes/web.php` – route nominate; area autenticata con `auth:sanctum` + `verified`; unica route pubblica significativa: `/` (Welcome).
+- **Route**: `routes/web.php` – route nominate; area autenticata con `auth:sanctum` + `verified`. Route pubbliche: `/` (sito pubblico, `PublicSiteController`), `/install` (wizard installazione), domanda ammissione socio con token (`members/admission-request/{token}`), download firmati (signed): logo, statuto, rendiconto, sfondo sezioni sito (`PublicDownloadController`).
 
 - **Viste Blade**:  
   - `resources/views/app.blade.php` – root Inertia  
-  - `resources/views/emails/`, `resources/views/receipts/`, `resources/views/rendiconto_cassa/` – email e template PDF
+  - `resources/views/emails/`, `resources/views/receipts/`, `resources/views/rendiconto_cassa/` – email e template PDF  
+  - `resources/views/pdf/` – letterhead (carta intestata), letterhead-preview  
+  - `resources/views/install/` – wizard installazione  
+  - `resources/views/documents/pdf.blade.php`, `resources/views/verbali/pdf.blade.php` – PDF documenti e verbali
 
 ---
 
@@ -62,14 +65,14 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 - **Ruoli**: `admin`, `contabile`, `segreteria`, `socio` (tabelle `roles` e `role_user`). Middleware `role:admin,segreteria` ecc. registrato in `bootstrap/app.php`; usato nelle route o nei controller.
 
 - **Modelli principali**:  
-  Member, MemberType, Organo, CaricaSociale, Incarico, Elezione, Candidatura, Voto, Incasso, Receipt, Invoice, InvoiceLine, ExpenseRefund, RefundItem, PrimaNotaEntry, Property, Asset, Warehouse, WarehouseStock, Item, Location, Event, EventRegistration, Verbale, Document, Attachment, Settings, PaymentMethod, Supplier.
+  Member, MemberType, Organo, CaricaSociale, Incarico, Elezione, Candidatura, Voto, Incasso, Receipt, ExpenseRefund, RefundItem, PrimaNotaEntry, Property, Asset, Warehouse, WarehouseStock, Item, Location, Event, EventRegistration, Verbale, Document, Template, Attachment, Settings, PaymentMethod, Supplier.
 
 - **Contabilità**: le voci del rendiconto sono **fisse** (Modello D, GU 18-04-2020), definite in `config/rendiconto_cassa.php` e usate tramite `App\Services\RendicontoCassaSchema`. La prima nota (`PrimaNotaEntry`) ha `rendiconto_code` (nessun piano dei conti né mapping). Codici fissi per prima nota automatica: quota → INC_A_1, donazione → INC_A_4, rimborsi → EXP_A_5.
 
 - **Relazioni chiave**:  
   - Organo → caricheSociali → incarichi → member  
   - Member → incassi, expenseRefunds, candidature, voti, registrazioni eventi  
-  - Incassi, ricevute, fatture collegati a prima nota (rendiconto_code). **ExpenseRefund** → `primaNotaEntries()` (morphMany): le voci sono create all’approvazione, una per ogni RefundItem; descrizione movimento = descrizione riga + « – Rimborso spese #id ».  
+  - Incassi e ricevute collegati a prima nota (rendiconto_code). **ExpenseRefund** → `primaNotaEntries()` (morphMany): le voci sono create all’approvazione, una per ogni RefundItem; descrizione movimento = descrizione riga + « – Rimborso spese #id ».  
   - Attachment polimorfico (Settings logo, documenti, ecc.)
 
 ---
@@ -80,8 +83,8 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
   Il path della pagina Vue deve corrispondere: `resources/js/Pages/Cartella/Page.vue` (es. `Organi/Show.vue`).
 
 - **Dati condivisi** (ogni richiesta): definiti in `app/Http/Middleware/HandleInertiaRequests.php` → `share()`:  
-  `user`, `userRoles`, `authMember`, `logo_url`, `flash`.  
-  In frontend: `usePage().props` (es. per ruoli e flash).
+  `user` (da parent/Jetstream), `ziggy`, `csrf_token`, `userRoles`, `authMember`, `logo_url`, `flash`, `apiVersions`, `appVersion`, `nome_associazione`.  
+  In frontend: `usePage().props` (es. per ruoli, flash, titolo browser).
 
 - **Route nominate**: Ziggy espone `route('nome.route', parametri)` nel frontend. Usare sempre `route()` per link e submit (es. `route('organi.show', organo)`).
 
@@ -110,15 +113,15 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 ## 7. Servizi e funzionalità speciali
 
 - **Services**:  
-  - `app/Services/InvoiceSdiService.php` – invio fatture allo SDI  
+  - `app/Services/AttachmentService.php` – salvataggio allegati (path `media/attachments/{context}/...`, record `Attachment`)  
   - `app/Services/ReceiptService.php` – gestione ricevute  
   - `app/Services/RendicontoCassaService.php` – rendiconto di cassa (legge prima nota per `rendiconto_code`, struttura da schema MOD_D)  
   - `app/Services/RendicontoCassaSchema.php` – schema hardcoded Modello D, voci selezionabili, code→label
 - **Config**: `config/rendiconto_cassa.php` – voci fisse del rendiconto (macro_areas e children)
 
-- **Settings**: modello `Settings` (chiave-valore) per nome associazione, quote, P.IVA, causali, ecc. Logo: `Attachment::forSetting('logo')`.
+- **Settings**: modello `Settings` (chiave-valore) per nome associazione, quote, P.IVA, causali, letterhead, sezioni sito pubblico, ecc. Logo: `Attachment::forSetting('logo')`. Sfondi sezioni sito: attachment per section.
 
-- **PDF**: DomPDF per ricevute e rendiconto cassa; template in `resources/views/receipts/`, `resources/views/rendiconto_cassa/`.
+- **PDF**: DomPDF per ricevute, rendiconto cassa, documenti, verbali e carta intestata; template in `resources/views/receipts/`, `resources/views/rendiconto_cassa/`, `resources/views/pdf/letterhead.blade.php`, `resources/views/documents/pdf.blade.php`, `resources/views/verbali/pdf.blade.php`.
 
 - **Tema**: `resources/js/Composables/useTheme.js` e componente `ThemeTriStateButton` per tema chiaro/scuro/system.
 
@@ -146,6 +149,8 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 | **Nuova pagina Inertia** | Aggiungere route in `routes/web.php`, metodo in controller con `Inertia::render('Cartella/NomePage', [...])`, creare `resources/js/Pages/Cartella/NomePage.vue`. |
 | **Nuovo modello / CRUD** | Migration, Model in `app/Models/`, controller (e eventuale policy), route in `web.php`, pagine Vue in `Pages/Cartella/`. |
 | **Menu laterale** | `resources/js/Layouts/AppLayout.vue` – sezioni e link in base a `route().current()` e `userRoles`. |
+| **Template documenti** | `app/Models/Template.php`, `App\Http\Controllers\TemplateController`, `resources/js/Pages/Templates/`, route `templates.*`. |
+| **Sito pubblico** | `App\Http\Controllers\PublicSiteController`, `resources/js/Pages/Public/Home.vue`, route `home`. Download pubblici: `PublicDownloadController`, route signed `public.*`. |
 | **Messaggi flash** | Backend: `with('flash', ['type' => 'success'|'error'|'info', 'message' => '...'])`. Frontend: componente `FlashToast` e `page.props.flash`. |
 | **Ruoli e permessi** | Middleware `app/Http/Middleware/EnsureUserHasRole.php`, registrazione in `bootstrap/app.php`, seed in `database/seeders/RoleSeeder.php`. |
 
@@ -157,6 +162,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 |-------|------|
 | Route web | `routes/web.php` |
 | Installer | `app/Http/Controllers/InstallController.php`, `app/Http/Middleware/EnsureNotInstalled.php`, `resources/views/install/` |
+| Sito pubblico | `app/Http/Controllers/PublicSiteController.php`, `app/Http/Controllers/PublicDownloadController.php` |
 | Dati condivisi Inertia | `app/Http/Middleware/HandleInertiaRequests.php` |
 | Middleware ruoli | `app/Http/Middleware/EnsureUserHasRole.php` |
 | Seed ruoli | `database/seeders/RoleSeeder.php` |
