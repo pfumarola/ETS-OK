@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\VerbaleTemplate;
+use App\Models\Template;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class VerbaleTemplateController extends Controller
+class TemplateController extends Controller
 {
     public function __construct()
     {
@@ -15,16 +15,16 @@ class VerbaleTemplateController extends Controller
 
     public function index()
     {
-        $templates = VerbaleTemplate::orderBy('nome')->paginate(15);
+        $templates = Template::orderBy('categoria')->orderBy('nome')->paginate(15);
 
-        return Inertia::render('VerbaleTemplates/Index', [
+        return Inertia::render('Templates/Index', [
             'templates' => $templates,
         ]);
     }
 
     public function create()
     {
-        return Inertia::render('VerbaleTemplates/Create', [
+        return Inertia::render('Templates/Create', [
             'tipoOptions' => [
                 ['value' => '', 'label' => 'Per tutti i tipi'],
                 ['value' => 'consiglio_direttivo', 'label' => 'Consiglio direttivo'],
@@ -37,22 +37,26 @@ class VerbaleTemplateController extends Controller
     {
         $validated = $request->validate([
             'nome' => 'required|string|max:255',
-            'tipo' => 'nullable|in:consiglio_direttivo,assemblea',
+            'categoria' => 'required|in:documento,verbale',
+            'tipo_verbale' => 'nullable|in:consiglio_direttivo,assemblea',
             'contenuto' => 'nullable|string',
         ]);
-        if (isset($validated['tipo']) && $validated['tipo'] === '') {
-            $validated['tipo'] = null;
+        if ($validated['categoria'] === 'documento') {
+            $validated['tipo_verbale'] = null;
         }
-        VerbaleTemplate::create($validated);
+        if (isset($validated['tipo_verbale']) && $validated['tipo_verbale'] === '') {
+            $validated['tipo_verbale'] = null;
+        }
+        Template::create($validated);
 
-        return redirect()->route('verbale-templates.index')
+        return redirect()->route('templates.index')
             ->with('flash', ['type' => 'success', 'message' => 'Template creato.']);
     }
 
-    public function edit(VerbaleTemplate $verbale_template)
+    public function edit(Template $template)
     {
-        return Inertia::render('VerbaleTemplates/Edit', [
-            'template' => $verbale_template,
+        return Inertia::render('Templates/Edit', [
+            'template' => $template,
             'tipoOptions' => [
                 ['value' => '', 'label' => 'Per tutti i tipi'],
                 ['value' => 'consiglio_direttivo', 'label' => 'Consiglio direttivo'],
@@ -61,27 +65,31 @@ class VerbaleTemplateController extends Controller
         ]);
     }
 
-    public function update(Request $request, VerbaleTemplate $verbale_template)
+    public function update(Request $request, Template $template)
     {
         $validated = $request->validate([
             'nome' => 'required|string|max:255',
-            'tipo' => 'nullable|in:consiglio_direttivo,assemblea',
+            'categoria' => 'required|in:documento,verbale',
+            'tipo_verbale' => 'nullable|in:consiglio_direttivo,assemblea',
             'contenuto' => 'nullable|string',
         ]);
-        if (isset($validated['tipo']) && $validated['tipo'] === '') {
-            $validated['tipo'] = null;
+        if ($validated['categoria'] === 'documento') {
+            $validated['tipo_verbale'] = null;
         }
-        $verbale_template->update($validated);
+        if (isset($validated['tipo_verbale']) && $validated['tipo_verbale'] === '') {
+            $validated['tipo_verbale'] = null;
+        }
+        $template->update($validated);
 
-        return redirect()->route('verbale-templates.index')
+        return redirect()->route('templates.index')
             ->with('flash', ['type' => 'success', 'message' => 'Template aggiornato.']);
     }
 
-    public function destroy(VerbaleTemplate $verbale_template)
+    public function destroy(Template $template)
     {
-        $verbale_template->delete();
+        $template->delete();
 
-        return redirect()->route('verbale-templates.index')
+        return redirect()->route('templates.index')
             ->with('flash', ['type' => 'success', 'message' => 'Template eliminato.']);
     }
 }

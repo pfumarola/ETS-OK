@@ -6,21 +6,27 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 const props = defineProps({ templates: Object });
 
+function usoLabel(t) {
+    if (t.categoria === 'documento') return 'Documento';
+    if (t.categoria === 'verbale') return t.tipo_label ? `Verbale – ${t.tipo_label}` : 'Verbale';
+    return t.categoria;
+}
+
 function elimina(t) {
     if (!confirm(`Eliminare il template "${t.nome}"?`)) return;
-    router.delete(route('verbale-templates.destroy', t.id), { preserveScroll: true });
+    router.delete(route('templates.destroy', t.id), { preserveScroll: true });
 }
 </script>
 
 <template>
-    <AppLayout title="Template verbali">
-        <Head title="Template verbali" />
+    <AppLayout title="Template">
+        <Head title="Template" />
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Template verbali</h2>
+                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Template</h2>
                 <div class="flex gap-2">
-                    <Link :href="route('verbali.index')" class="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"><ArrowLeftIcon class="size-4" aria-hidden="true" />Verbali</Link>
-                    <Link :href="route('verbale-templates.create')">
+                    <Link :href="route('documents.index')" class="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"><ArrowLeftIcon class="size-4" aria-hidden="true" />Documenti</Link>
+                    <Link :href="route('templates.create')">
                         <PrimaryButton><PlusIcon class="size-4 me-2" aria-hidden="true" />Nuovo template</PrimaryButton>
                     </Link>
                 </div>
@@ -34,19 +40,16 @@ function elimina(t) {
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nome</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Uso</th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Azioni</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="t in templates.data" :key="t.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">{{ t.nome }}</td>
-                                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                                    <span v-if="t.tipo_label" class="px-2 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700">{{ t.tipo_label }}</span>
-                                    <span v-else class="text-gray-400">Tutti</span>
-                                </td>
+                                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ usoLabel(t) }}</td>
                                 <td class="px-4 py-2 text-right">
-                                    <Link :href="route('verbale-templates.edit', t.id)" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline me-3">
+                                    <Link :href="route('templates.edit', t.id)" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline me-3">
                                         <PencilSquareIcon class="size-4" aria-hidden="true" />Modifica
                                     </Link>
                                     <button
@@ -60,7 +63,7 @@ function elimina(t) {
                             </tr>
                         </tbody>
                     </table>
-                    <div v-if="!templates.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun template. Creane uno per usarlo nella redazione dei verbali.</div>
+                    <div v-if="!templates.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun template. Creane uno per usarlo nella redazione di documenti o verbali.</div>
                     <div v-if="templates.prev_page_url || templates.next_page_url" class="px-4 py-2 border-t flex justify-between">
                         <Link v-if="templates.prev_page_url" :href="templates.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
                         <span v-else></span>

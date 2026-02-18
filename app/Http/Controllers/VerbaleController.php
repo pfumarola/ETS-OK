@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 use App\Models\Verbale;
-use App\Models\VerbaleTemplate;
+use App\Models\Template;
 use App\Services\AttachmentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -46,7 +46,7 @@ class VerbaleController extends Controller
             'prossimoNumeroConsiglio' => Verbale::prossimoNumeroPer(Verbale::TIPO_CONSIGLIO, $anno),
             'prossimoNumeroAssemblea' => Verbale::prossimoNumeroPer(Verbale::TIPO_ASSEMBLEA, $anno),
             'annoSuggerito' => $anno,
-            'templates' => VerbaleTemplate::orderBy('nome')->get(['id', 'nome', 'tipo', 'contenuto']),
+            'templates' => Template::where('categoria', 'verbale')->orderBy('nome')->get(['id', 'nome', 'tipo_verbale', 'contenuto']),
         ]);
     }
 
@@ -145,7 +145,7 @@ class VerbaleController extends Controller
 
         return Inertia::render('Verbali/Edit', [
             'verbale' => $verbale,
-            'templates' => VerbaleTemplate::orderBy('nome')->get(['id', 'nome', 'tipo', 'contenuto']),
+            'templates' => Template::where('categoria', 'verbale')->orderBy('nome')->get(['id', 'nome', 'tipo_verbale', 'contenuto']),
         ]);
     }
 

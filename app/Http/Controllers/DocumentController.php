@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 use App\Models\Document;
-use App\Models\DocumentTemplate;
+use App\Models\Template;
 use App\Services\AttachmentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -34,7 +34,7 @@ class DocumentController extends Controller
     public function create()
     {
         return Inertia::render('Documents/Create', [
-            'templates' => DocumentTemplate::orderBy('nome')->get(['id', 'nome', 'contenuto']),
+            'templates' => Template::where('categoria', 'documento')->orderBy('nome')->get(['id', 'nome', 'contenuto']),
         ]);
     }
 
@@ -66,7 +66,7 @@ class DocumentController extends Controller
     {
         return Inertia::render('Documents/Edit', [
             'document' => $document,
-            'templates' => DocumentTemplate::orderBy('nome')->get(['id', 'nome', 'contenuto']),
+            'templates' => Template::where('categoria', 'documento')->orderBy('nome')->get(['id', 'nome', 'contenuto']),
         ]);
     }
 

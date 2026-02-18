@@ -94,7 +94,7 @@ function useTemplate(template) {
                         </button>
                     </li>
                 </ul>
-                <p v-if="!templates?.length" class="py-4 text-sm text-gray-500 dark:text-gray-400">Nessun template. Crea template dalla sezione Template documenti.</p>
+                <p v-if="!templates?.length" class="py-4 text-sm text-gray-500 dark:text-gray-400">Nessun template. Crea template dalla sezione Template.</p>
             </div>
             <div class="flex justify-end gap-2 px-6 py-4 bg-gray-100 dark:bg-gray-800">
                 <SecondaryButton type="button" @click="showTemplateModal = false">Chiudi</SecondaryButton>

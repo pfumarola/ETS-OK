@@ -26,8 +26,7 @@ use App\Http\Controllers\PrimaNotaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerbaleController;
-use App\Http\Controllers\VerbaleTemplateController;
-use App\Http\Controllers\DocumentTemplateController;
+use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
@@ -192,14 +191,13 @@ Route::middleware([
     Route::post('documents/{document}/attachments', [DocumentController::class, 'storeAttachment'])->name('documents.attachments.store');
     Route::delete('documents/{document}/attachments/{attachment}', [DocumentController::class, 'destroyAttachment'])->name('documents.attachments.destroy');
     Route::resource('documents', DocumentController::class);
-    Route::resource('document-templates', DocumentTemplateController::class)->except(['show']);
+    Route::resource('templates', TemplateController::class)->except(['show']);
     Route::get('verbali/prossimo-numero', [VerbaleController::class, 'prossimoNumero'])->name('verbali.prossimo-numero');
     Route::get('verbali/{verbale}/pdf', [VerbaleController::class, 'downloadPdf'])->name('verbali.pdf');
     Route::post('verbali/{verbale}/conferma', [VerbaleController::class, 'conferma'])->name('verbali.conferma');
     Route::post('verbali/{verbale}/attachments', [VerbaleController::class, 'storeAttachment'])->name('verbali.attachments.store');
     Route::delete('verbali/{verbale}/attachments/{attachment}', [VerbaleController::class, 'destroyAttachment'])->name('verbali.attachments.destroy');
     Route::resource('verbali', VerbaleController::class)->parameters(['verbali' => 'verbale']);
-    Route::resource('verbale-templates', VerbaleTemplateController::class)->except(['show']);
 
     // Eventi
     Route::get('events', [EventController::class, 'index'])->name('events.index');
