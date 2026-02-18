@@ -203,6 +203,10 @@ class MemberController extends Controller
             return $this->memberShowWithAccessError($member, 'Il socio non ha accesso attivo.');
         }
 
+        if ($member->user_id === request()->user()->id) {
+            return $this->memberShowWithAccessError($member, 'Non puoi revocare il tuo stesso accesso.');
+        }
+
         $user = $member->user;
         $member->update(['user_id' => null]);
         if ($user) {

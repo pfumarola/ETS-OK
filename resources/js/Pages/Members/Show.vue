@@ -152,7 +152,7 @@ const submitEsclusione = () => {
                         <PrimaryButton type="submit">Attiva accesso area soci</PrimaryButton>
                     </form>
                     <template v-else>
-                        <form method="post" :action="route('members.revoke-access', member.id)" @submit.prevent="revokeAccess" class="inline">
+                        <form v-if="!isOwnProfile" method="post" :action="route('members.revoke-access', member.id)" @submit.prevent="revokeAccess" class="inline">
                             <SecondaryButton type="submit">Revoca accesso</SecondaryButton>
                         </form>
                         <p v-if="canAssignRoles || (member.user?.roles?.length)" class="text-sm text-gray-600 dark:text-gray-400">
