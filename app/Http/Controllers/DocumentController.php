@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\Document;
 use App\Models\Template;
 use App\Services\AttachmentService;
+use App\Support\PdfLetterheadData;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -96,7 +97,7 @@ class DocumentController extends Controller
     {
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('documents.pdf', [
             'document' => $document,
-            'logo_data_uri' => Attachment::logoDataUriForPdf(),
+            'letterhead' => PdfLetterheadData::data(),
         ]);
 
         $safeTitle = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $document->titolo ?? '') ?: 'documento';

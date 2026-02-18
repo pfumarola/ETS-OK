@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
-use App\Models\Settings;
 use App\Services\RendicontoCassaService;
+use App\Support\PdfLetterheadData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
@@ -89,12 +89,10 @@ class PublicDownloadController extends Controller
         $anno = $anno >= 2000 && $anno <= 2100 ? $anno : (int) now()->year;
 
         $data = $service->buildRendiconto($anno);
-        $nomeAssociazione = Settings::get('nome_associazione', 'Associazione - Ente del Terzo Settore');
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('rendiconto_cassa.template', [
             'rendiconto' => $data,
-            'nome_associazione' => $nomeAssociazione,
-            'logo_data_uri' => Attachment::logoDataUriForPdf(),
+            'letterhead' => PdfLetterheadData::data(),
         ]);
 
         $filename = 'rendiconto_cassa_' . $anno . '.pdf';

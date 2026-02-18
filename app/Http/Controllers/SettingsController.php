@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\Settings;
 use App\Services\AttachmentService;
+use App\Support\PdfLetterheadData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
@@ -58,6 +59,8 @@ class SettingsController extends Controller
             'site_chi_siamo_text' => Settings::get('site_chi_siamo_text', ''),
             'site_footer_text' => Settings::get('site_footer_text', ''),
             'indirizzo_associazione' => Settings::get('indirizzo_associazione', ''),
+            'email_associazione' => Settings::get('email_associazione', ''),
+            'pec_associazione' => Settings::get('pec_associazione', ''),
             'codice_fiscale_associazione' => Settings::get('codice_fiscale_associazione', ''),
             'partita_iva_associazione' => Settings::get('partita_iva_associazione', ''),
             'causale_default_donazione' => Settings::get('causale_default_donazione', 'Erogazione liberale'),
@@ -84,6 +87,8 @@ class SettingsController extends Controller
             'quota_annuale' => 'required|numeric|min:0',
             'nome_associazione' => 'nullable|string|max:255',
             'indirizzo_associazione' => 'nullable|string|max:255',
+            'email_associazione' => 'nullable|email|max:255',
+            'pec_associazione' => 'nullable|email|max:255',
             'codice_fiscale_associazione' => 'nullable|string|max:16',
             'partita_iva_associazione' => 'nullable|string|max:20',
             'causale_default_donazione' => 'nullable|string|max:255',
@@ -106,6 +111,8 @@ class SettingsController extends Controller
         Settings::set('quota_annuale', $request->input('quota_annuale'));
         Settings::set('nome_associazione', $request->input('nome_associazione', ''));
         Settings::set('indirizzo_associazione', $request->input('indirizzo_associazione', ''));
+        Settings::set('email_associazione', $request->input('email_associazione', ''));
+        Settings::set('pec_associazione', $request->input('pec_associazione', ''));
         Settings::set('codice_fiscale_associazione', $request->input('codice_fiscale_associazione', ''));
         Settings::set('partita_iva_associazione', $request->input('partita_iva_associazione', ''));
         Settings::set('causale_default_donazione', $request->input('causale_default_donazione', ''));
@@ -223,5 +230,17 @@ class SettingsController extends Controller
             return redirect()->route('settings.index')
                 ->with('flash', ['type' => 'error', 'message' => 'Errore nell\'invio: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Anteprima PDF della carta intestata (dati associazione).
+     */
+    public function letterheadPreview()
+    {
+        $letterheadData = PdfLetterheadData::data();
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.letterhead-preview', [
+            'letterheadData' => $letterheadData,
+        ]);
+        return $pdf->stream('anteprima-carta-intestata.pdf');
     }
 }

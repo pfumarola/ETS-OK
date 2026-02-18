@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Documento – {{ $document->titolo }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; padding: 24px; line-height: 1.4; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; padding: 105px 24px 24px 24px; line-height: 1.4; }
         .header { text-align: center; margin-bottom: 20px; }
         .title { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
         .meta { font-size: 11px; color: #333; margin-top: 8px; }
@@ -16,10 +16,8 @@
     </style>
 </head>
 <body>
+    <div class="letterhead-fixed">@include('pdf.letterhead', $letterhead ?? [])</div>
     <div class="header">
-        @if(!empty($logo_data_uri))
-            <img src="{{ $logo_data_uri }}" alt="Logo" style="max-height: 48px; margin-bottom: 8px;" />
-        @endif
         <div class="title">{{ $document->titolo }}</div>
         @if($document->data)
             <div class="meta">{{ $document->data->format('d/m/Y') }}</div>

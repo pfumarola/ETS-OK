@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Rendiconto per cassa {{ $rendiconto['anno'] ?? '' }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; padding: 20px; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; padding: 105px 20px 20px 20px; }
         .header { text-align: center; margin-bottom: 20px; }
         .title { font-size: 16px; font-weight: bold; }
         .subtitle { font-size: 12px; color: #333; margin-top: 4px; }
@@ -19,12 +19,9 @@
     </style>
 </head>
 <body>
+    <div class="letterhead-fixed">@include('pdf.letterhead', $letterhead ?? [])</div>
     <div class="header">
-        @if(!empty($logo_data_uri))
-            <img src="{{ $logo_data_uri }}" alt="Logo" style="max-height: 48px; margin-bottom: 8px;" />
-        @endif
-        <div class="title">{{ $nome_associazione ?? 'Associazione - Ente del Terzo Settore' }}</div>
-        <div class="subtitle">Rendiconto economico per cassa – Anno {{ $rendiconto['anno'] ?? '' }}</div>
+        <div class="title">Rendiconto economico per cassa – Anno {{ $rendiconto['anno'] ?? '' }}</div>
         <div class="subtitle">Modello D – DM 5 marzo 2020 (criterio di cassa)</div>
     </div>
 

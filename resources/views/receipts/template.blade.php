@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Ricevuta {{ $receipt->number }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; padding: 20px; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; padding: 105px 20px 20px 20px; }
         .header { text-align: center; margin-bottom: 24px; }
         .receipt-title { font-size: 18px; font-weight: bold; }
         table { width: 100%; border-collapse: collapse; margin: 16px 0; }
@@ -14,12 +14,9 @@
     </style>
 </head>
 <body>
+    <div class="letterhead-fixed">@include('pdf.letterhead')</div>
     <div class="header">
-        @if(!empty($logo_data_uri))
-            <img src="{{ $logo_data_uri }}" alt="Logo" style="max-height: 48px; margin-bottom: 8px;" />
-        @endif
         <div class="receipt-title">RICEVUTA N. {{ $receipt->number }}</div>
-        <div>{{ $nome_associazione ?? 'Associazione - Ente del Terzo Settore' }}</div>
     </div>
 
     <p>Ricevuta liberale / Quota associativa</p>

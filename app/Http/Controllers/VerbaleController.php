@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\Verbale;
 use App\Models\Template;
 use App\Services\AttachmentService;
+use App\Support\PdfLetterheadData;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -126,7 +127,7 @@ class VerbaleController extends Controller
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('verbali.pdf', [
             'verbale' => $verbale,
-            'logo_data_uri' => Attachment::logoDataUriForPdf(),
+            'letterhead' => PdfLetterheadData::data(),
         ]);
 
         $safeTitle = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $verbale->titolo) ?: 'verbale';

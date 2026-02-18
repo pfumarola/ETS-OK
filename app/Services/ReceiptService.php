@@ -114,6 +114,8 @@ class ReceiptService
             'issued_at' => $issuedAt,
             'nome_associazione' => Settings::get('nome_associazione', 'Associazione - Ente del Terzo Settore'),
             'indirizzo_associazione' => Settings::get('indirizzo_associazione', ''),
+            'email_associazione' => Settings::get('email_associazione', ''),
+            'pec_associazione' => Settings::get('pec_associazione', ''),
             'codice_fiscale_associazione' => Settings::get('codice_fiscale_associazione', ''),
             'partita_iva_associazione' => Settings::get('partita_iva_associazione', ''),
             'logo_data_uri' => $logoDataUri,

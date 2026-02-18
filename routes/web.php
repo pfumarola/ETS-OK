@@ -120,6 +120,7 @@ Route::middleware([
     Route::post('settings/site-section-background/{sectionId}', [SettingsController::class, 'uploadSectionBackground'])->name('settings.site-section-background.upload');
     Route::delete('settings/site-section-background/{sectionId}', [SettingsController::class, 'deleteSectionBackground'])->name('settings.site-section-background.delete');
     Route::post('settings/test-email', [SettingsController::class, 'sendTestEmail'])->name('settings.test-email');
+    Route::get('settings/letterhead-preview', [SettingsController::class, 'letterheadPreview'])->name('settings.letterhead-preview');
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 
     // Incassi (quote e donazioni), ricevute

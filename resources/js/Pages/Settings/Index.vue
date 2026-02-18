@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { CheckIcon, ArrowLeftIcon, BanknotesIcon, BuildingOfficeIcon, DocumentTextIcon, EnvelopeIcon, PhotoIcon, TrashIcon, GlobeAltIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
+import { CheckIcon, ArrowLeftIcon, BanknotesIcon, BuildingOfficeIcon, DocumentTextIcon, EnvelopeIcon, EyeIcon, PhotoIcon, TrashIcon, GlobeAltIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -14,6 +14,8 @@ const props = defineProps({
     quota_annuale: [Number, String],
     nome_associazione: String,
     indirizzo_associazione: String,
+    email_associazione: String,
+    pec_associazione: String,
     codice_fiscale_associazione: String,
     partita_iva_associazione: String,
     causale_default_donazione: String,
@@ -93,6 +95,8 @@ const form = useForm({
     quota_annuale: props.quota_annuale != null ? String(Number(props.quota_annuale).toFixed(2)) : '0',
     nome_associazione: props.nome_associazione ?? '',
     indirizzo_associazione: props.indirizzo_associazione ?? '',
+    email_associazione: props.email_associazione ?? '',
+    pec_associazione: props.pec_associazione ?? '',
     codice_fiscale_associazione: props.codice_fiscale_associazione ?? '',
     partita_iva_associazione: props.partita_iva_associazione ?? '',
     causale_default_donazione: props.causale_default_donazione ?? '',
@@ -237,9 +241,25 @@ const placeholderSottotitolo = 'Es: Benvenuti nel sito di \u007B\u007Bnome_assoc
                             <InputError class="mt-1" :message="form.errors.codice_fiscale_associazione" />
                         </div>
                         <div>
+                            <InputLabel for="email_associazione" value="Email associazione" />
+                            <TextInput id="email_associazione" v-model="form.email_associazione" type="email" class="mt-1 block w-full" />
+                            <InputError class="mt-1" :message="form.errors.email_associazione" />
+                        </div>
+                        <div>
+                            <InputLabel for="pec_associazione" value="PEC associazione" />
+                            <TextInput id="pec_associazione" v-model="form.pec_associazione" type="email" class="mt-1 block w-full" placeholder="es. associazione@pec.it" />
+                            <InputError class="mt-1" :message="form.errors.pec_associazione" />
+                        </div>
+                        <div>
                             <InputLabel for="partita_iva_associazione" value="Partita IVA" />
                             <TextInput id="partita_iva_associazione" v-model="form.partita_iva_associazione" type="text" class="mt-1 block w-full" />
                             <InputError class="mt-1" :message="form.errors.partita_iva_associazione" />
+                        </div>
+                        <div class="pt-2">
+                            <a :href="route('settings.letterhead-preview')" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <EyeIcon class="size-4" aria-hidden="true" />
+                                Anteprima carta intestata
+                            </a>
                         </div>
                     </div>
 
