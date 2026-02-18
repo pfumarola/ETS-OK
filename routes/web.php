@@ -16,6 +16,7 @@ use App\Http\Controllers\ItemController;
 use App\Http\Controllers\IncassoController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\MemberInviteController;
 use App\Http\Controllers\MemberTypeController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\PublicDownloadController;
@@ -42,6 +43,14 @@ Route::middleware(['install'])->prefix('install')->name('install.')->group(funct
 
 Route::get('/', PublicSiteController::class)->middleware('redirectToInstall')->name('home');
 
+// Domanda di ammissione socio (link invito email) - pubblico, con throttle
+Route::middleware('throttle:10,1')->group(function () {
+    Route::get('members/admission-request/{token}', [MemberInviteController::class, 'showAdmissionRequestForm'])->name('members.admission-request.form');
+});
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('members/admission-request/{token}', [MemberInviteController::class, 'storeAdmissionRequest'])->name('members.admission-request.store');
+});
+
 Route::middleware('signed')->group(function () {
     Route::get('/public/logo/{attachment}', [PublicDownloadController::class, 'logo'])->name('public.logo.show');
     Route::get('/public/statuto/{attachment}', [PublicDownloadController::class, 'statuto'])->name('public.statuto.download');
@@ -64,6 +73,8 @@ Route::middleware([
     Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
     // Soci e volontari
+    Route::get('members/invites/create', [MemberInviteController::class, 'create'])->name('members.invites.create')->middleware('role:admin,segreteria');
+    Route::post('members/invites', [MemberInviteController::class, 'store'])->name('members.invites.store')->middleware('role:admin,segreteria');
     Route::resource('members', MemberController::class);
     Route::post('members/{member}/accept-admission', [MemberController::class, 'acceptAdmission'])->name('members.accept-admission');
     Route::post('members/{member}/reject-admission', [MemberController::class, 'rejectAdmission'])->name('members.reject-admission');

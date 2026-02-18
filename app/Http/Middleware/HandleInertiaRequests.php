@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Attachment;
+use App\Models\Settings;
 use App\Providers\AppServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -87,6 +88,10 @@ class HandleInertiaRequests extends Middleware
             'apiVersions' => config('api.versions', ['v1']),
             // Versione applicazione (semver) visibile in area riservata e pagine auth
             'appVersion' => config('app.version'),
+            // Nome associazione per titolo browser e UI (al posto di ETS-OK/APP_NAME)
+            'nome_associazione' => ! empty($appKey) && $appKey !== AppServiceProvider::INSTALL_PLACEHOLDER_KEY
+                ? Settings::get('nome_associazione', config('app.name'))
+                : config('app.name'),
         ];
     }
 }

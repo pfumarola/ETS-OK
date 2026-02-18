@@ -1,10 +1,8 @@
 <script setup>
-import { PlusIcon, FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon, EllipsisVerticalIcon, ClipboardDocumentListIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon, ClipboardDocumentListIcon, EnvelopeIcon } from '@heroicons/vue/24/outline';
 import { reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
@@ -36,16 +34,9 @@ const search = () => {
                     <Link :href="route('members.create')">
                         <PrimaryButton><PlusIcon class="size-4 me-2" aria-hidden="true" />Nuovo socio</PrimaryButton>
                     </Link>
-                    <Dropdown align="right" width="48">
-                        <template #trigger>
-                            <button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <EllipsisVerticalIcon class="size-5" aria-hidden="true" />
-                            </button>
-                        </template>
-                        <template #content>
-                            <!-- Dropdown content rimosso -->
-                        </template>
-                    </Dropdown>
+                    <Link :href="route('members.invites.create')" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <EnvelopeIcon class="size-4 me-2" aria-hidden="true" />Invia invito
+                    </Link>
                 </div>
             </div>
         </template>

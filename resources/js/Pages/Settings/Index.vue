@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { CheckIcon, ArrowLeftIcon, BanknotesIcon, BuildingOfficeIcon, DocumentTextIcon, EnvelopeIcon, PhotoIcon, TrashIcon, GlobeAltIcon } from '@heroicons/vue/24/outline';
+import { CheckIcon, ArrowLeftIcon, BanknotesIcon, BuildingOfficeIcon, DocumentTextIcon, EnvelopeIcon, PhotoIcon, TrashIcon, GlobeAltIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -8,6 +8,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import RichTextEditor from '@/Components/RichTextEditor.vue';
 
 const props = defineProps({
     quota_annuale: [Number, String],
@@ -27,6 +28,7 @@ const props = defineProps({
     site_hero_subtitle: String,
     site_chi_siamo_text: String,
     site_footer_text: String,
+    informativa_privacy_domanda_ammissione: String,
 });
 
 const page = usePage();
@@ -62,6 +64,7 @@ const tabs = [
     { id: 'causali', label: 'Causali', icon: DocumentTextIcon },
     { id: 'email', label: 'Email', icon: EnvelopeIcon },
     { id: 'sito', label: 'Sito pubblico', icon: GlobeAltIcon },
+    { id: 'privacy', label: 'Privacy', icon: ShieldCheckIcon },
 ];
 
 const testEmailSending = ref(false);
@@ -100,6 +103,7 @@ const form = useForm({
     site_hero_subtitle: props.site_hero_subtitle ?? '',
     site_chi_siamo_text: props.site_chi_siamo_text ?? '',
     site_footer_text: props.site_footer_text ?? '',
+    informativa_privacy_domanda_ammissione: props.informativa_privacy_domanda_ammissione ?? '',
     ...sectionColorFields.value,
 });
 
@@ -161,7 +165,7 @@ const placeholderSottotitolo = 'Es: Benvenuti nel sito di \u007B\u007Bnome_assoc
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Impostazioni</h2>
         </template>
 
-        <div class="py-6 max-w-2xl mx-auto sm:px-6">
+        <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
             <form @submit.prevent="form.put(route('settings.update'))" class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                 <!-- Tab list -->
                 <nav class="flex border-b border-gray-200 dark:border-gray-600" aria-label="Tabs">
@@ -395,6 +399,21 @@ const placeholderSottotitolo = 'Es: Benvenuti nel sito di \u007B\u007Bnome_assoc
                             <InputLabel for="causale_default_rimborso" value="Causale default rimborso" />
                             <TextInput id="causale_default_rimborso" v-model="form.causale_default_rimborso" type="text" class="mt-1 block w-full" />
                             <InputError class="mt-1" :message="form.errors.causale_default_rimborso" />
+                        </div>
+                    </div>
+
+                    <!-- Tab: Privacy -->
+                    <div v-show="activeTab === 'privacy'" class="space-y-4">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Informativa privacy mostrata nel form di richiesta ammissione soci. Se vuota, verrà mostrato un testo minimale.</p>
+                        <div>
+                            <InputLabel for="informativa_privacy_domanda_ammissione" value="Informativa privacy (GDPR) per domanda ammissione" />
+                            <RichTextEditor
+                                id="informativa_privacy_domanda_ammissione"
+                                v-model="form.informativa_privacy_domanda_ammissione"
+                                placeholder="Testo dell'informativa sul trattamento dei dati personali..."
+                                min-height="280px"
+                            />
+                            <InputError class="mt-1" :message="form.errors.informativa_privacy_domanda_ammissione" />
                         </div>
                     </div>
 

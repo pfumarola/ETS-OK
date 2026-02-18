@@ -63,6 +63,7 @@ class SettingsController extends Controller
             'causale_default_donazione' => Settings::get('causale_default_donazione', 'Erogazione liberale'),
             'causale_default_quota' => Settings::get('causale_default_quota', 'Quota associativa'),
             'causale_default_rimborso' => Settings::get('causale_default_rimborso', 'Rimborso spese'),
+            'informativa_privacy_domanda_ammissione' => Settings::get('informativa_privacy_domanda_ammissione', ''),
             'logo' => $logo,
             'mailConfig' => [
                 'mailer' => config('mail.default'),
@@ -94,6 +95,7 @@ class SettingsController extends Controller
             'site_hero_subtitle' => 'nullable|string|max:2000',
             'site_chi_siamo_text' => 'nullable|string|max:5000',
             'site_footer_text' => 'nullable|string|max:2000',
+            'informativa_privacy_domanda_ammissione' => 'nullable|string|max:10000',
         ];
         foreach ($allowedSections as $sectionId) {
             $rules['site_section_' . $sectionId . '_bg_color'] = 'nullable|string|max:20';
@@ -115,6 +117,7 @@ class SettingsController extends Controller
         Settings::set('site_hero_subtitle', $request->input('site_hero_subtitle', ''));
         Settings::set('site_chi_siamo_text', $request->input('site_chi_siamo_text', ''));
         Settings::set('site_footer_text', $request->input('site_footer_text', ''));
+        Settings::set('informativa_privacy_domanda_ammissione', $request->input('informativa_privacy_domanda_ammissione', ''));
         foreach ($allowedSections as $sectionId) {
             Settings::set('site_section_' . $sectionId . '_bg_color', $request->input('site_section_' . $sectionId . '_bg_color', ''));
             Settings::set('site_section_' . $sectionId . '_text_color', $request->input('site_section_' . $sectionId . '_text_color', ''));
@@ -201,12 +204,14 @@ class SettingsController extends Controller
                 ->with('flash', ['type' => 'error', 'message' => 'Indica un destinatario o assicurati che il tuo account abbia un indirizzo email.']);
         }
 
+        $appName = Settings::get('nome_associazione', config('app.name'));
+
         try {
             Mail::raw(
-                "Questa è un'email di test inviata da " . config('app.name') . ".\n\nSe la ricevi, la configurazione dell'invio email è corretta.\n\nData e ora: " . now()->format('d/m/Y H:i:s'),
-                function ($message) use ($email) {
+                "Questa è un'email di test inviata da " . $appName . ".\n\nSe la ricevi, la configurazione dell'invio email è corretta.\n\nData e ora: " . now()->format('d/m/Y H:i:s'),
+                function ($message) use ($email, $appName) {
                     $message->to($email)
-                        ->subject('[' . config('app.name') . '] Email di test');
+                        ->subject('[' . $appName . '] Email di test');
                 }
             );
 

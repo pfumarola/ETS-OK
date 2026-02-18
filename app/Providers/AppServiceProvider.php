@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Settings;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 
@@ -35,6 +36,8 @@ class AppServiceProvider extends ServiceProvider
             if ($nameFromExample !== null) {
                 Config::set('app.name', $nameFromExample);
             }
+        } else {
+            Config::set('mail.from.name', Settings::get('nome_associazione', config('mail.from.name')));
         }
     }
 
