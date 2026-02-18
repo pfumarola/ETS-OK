@@ -1,10 +1,10 @@
 <script setup>
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-const props = defineProps({ memberTypes: Array });
+const props = defineProps({ memberTypes: Object });
 
 function elimina(t) {
     if (!confirm(`Eliminare la tipologia "${t.display_name || t.name}"?`)) return;
@@ -36,7 +36,7 @@ function elimina(t) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="t in memberTypes" :key="t.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <tr v-for="t in memberTypes.data" :key="t.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-4 py-2 font-medium">{{ t.display_name || t.name }}</td>
                                 <td class="px-4 py-2">{{ t.members_count ?? 0 }}</td>
                                 <td class="px-4 py-2 text-right">
@@ -56,7 +56,12 @@ function elimina(t) {
                             </tr>
                         </tbody>
                     </table>
-                    <div v-if="!memberTypes?.length" class="px-4 py-8 text-center text-gray-500">Nessuna tipologia. Creane una per iniziare.</div>
+                    <div v-if="!memberTypes.data?.length" class="px-4 py-8 text-center text-gray-500">Nessuna tipologia. Creane una per iniziare.</div>
+                    <div v-if="memberTypes.prev_page_url || memberTypes.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="memberTypes.prev_page_url" :href="memberTypes.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="memberTypes.next_page_url" :href="memberTypes.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
             </div>
         </div>

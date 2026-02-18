@@ -43,6 +43,14 @@ class Member extends Model
         'deceduto_at',
     ];
 
+    /** Salva il codice fiscale sempre in maiuscolo. */
+    protected function setCodiceFiscaleAttribute($value): void
+    {
+        $this->attributes['codice_fiscale'] = ($value !== null && trim((string) $value) !== '')
+            ? strtoupper(trim((string) $value))
+            : null;
+    }
+
     protected function casts(): array
     {
         return [

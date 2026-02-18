@@ -1,10 +1,10 @@
 <script setup>
-import { PlusIcon, EyeIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, EyeIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-defineProps({ properties: Array });
+defineProps({ properties: Object });
 </script>
 
 <template>
@@ -32,7 +32,7 @@ defineProps({ properties: Array });
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="p in properties" :key="p.id">
+                            <tr v-for="p in properties.data" :key="p.id">
                                 <td class="px-4 py-2">{{ p.name }}</td>
                                 <td class="px-4 py-2">{{ p.address || '—' }}</td>
                                 <td class="px-4 py-2">{{ p.assets_count ?? 0 }}</td>
@@ -43,6 +43,12 @@ defineProps({ properties: Array });
                             </tr>
                         </tbody>
                     </table>
+                    <p v-if="!properties.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun immobile. <Link :href="route('properties.create')" class="text-indigo-600 dark:text-indigo-400 hover:underline">Aggiungi il primo immobile</Link>.</p>
+                    <div v-if="properties.prev_page_url || properties.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="properties.prev_page_url" :href="properties.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="properties.next_page_url" :href="properties.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
             </div>
         </div>

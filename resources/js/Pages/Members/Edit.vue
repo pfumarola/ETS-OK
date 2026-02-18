@@ -115,8 +115,8 @@ const formSocio = useForm({
                     <InputError class="mt-1" :message="formFull.errors.email" />
                 </div>
                 <div>
-                    <InputLabel for="codice_fiscale" value="Codice fiscale *" />
-                    <TextInput id="codice_fiscale" v-model="formFull.codice_fiscale" class="mt-1 block w-full" maxlength="16" required />
+                    <InputLabel for="codice_fiscale" value="Codice fiscale" />
+                    <TextInput id="codice_fiscale" v-model="formFull.codice_fiscale" class="mt-1 block w-full" maxlength="64" />
                     <InputError class="mt-1" :message="formFull.errors.codice_fiscale" />
                 </div>
                 <div class="grid grid-cols-2 gap-4">

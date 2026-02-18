@@ -440,7 +440,7 @@ class MemberController extends Controller
             ->orderBy('data_iscrizione')
             ->orderBy('cognome')
             ->orderBy('nome');
-        $members = $query->get();
+        $members = $query->paginate(20)->withQueryString();
         return Inertia::render('Members/LibroSoci', [
             'members' => $members,
         ]);

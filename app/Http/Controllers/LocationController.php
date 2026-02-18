@@ -15,7 +15,7 @@ class LocationController extends Controller
 
     public function index()
     {
-        $locations = Location::withCount('warehouses')->orderBy('name')->get();
+        $locations = Location::withCount('warehouses')->orderBy('name')->paginate(15);
         return Inertia::render('Locations/Index', ['locations' => $locations]);
     }
 

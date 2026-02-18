@@ -106,8 +106,8 @@ const form = useForm({
                     <InputError class="mt-1" :message="form.errors.email" />
                 </div>
                 <div>
-                    <InputLabel for="codice_fiscale" value="Codice fiscale *" />
-                    <TextInput id="codice_fiscale" v-model="form.codice_fiscale" class="mt-1 block w-full" maxlength="16" required />
+                    <InputLabel for="codice_fiscale" value="Codice fiscale" />
+                    <TextInput id="codice_fiscale" v-model="form.codice_fiscale" class="mt-1 block w-full" maxlength="64" />
                     <InputError class="mt-1" :message="form.errors.codice_fiscale" />
                 </div>
                 <div>

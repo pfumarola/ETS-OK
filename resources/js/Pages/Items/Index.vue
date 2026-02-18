@@ -1,10 +1,10 @@
 <script setup>
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-defineProps({ items: Array });
+defineProps({ items: Object });
 
 function elimina(id) {
     if (!confirm('Eliminare questo articolo?')) return;
@@ -37,7 +37,7 @@ function elimina(id) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="i in items" :key="i.id">
+                            <tr v-for="i in items.data" :key="i.id">
                                 <td class="px-4 py-2">{{ i.name }}</td>
                                 <td class="px-4 py-2">{{ i.code || '—' }}</td>
                                 <td class="px-4 py-2">{{ i.unit || 'pz' }}</td>
@@ -48,8 +48,13 @@ function elimina(id) {
                             </tr>
                         </tbody>
                     </table>
+                    <p v-if="!items.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun articolo. <Link :href="route('items.create')" class="text-indigo-600 dark:text-indigo-400 hover:underline">Crea il primo articolo</Link>.</p>
+                    <div v-if="items.prev_page_url || items.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="items.prev_page_url" :href="items.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="items.next_page_url" :href="items.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
-                <p v-if="!items?.length" class="mt-4 text-sm text-gray-500 dark:text-gray-400">Nessun articolo. <Link :href="route('items.create')" class="text-indigo-600 dark:text-indigo-400 hover:underline">Crea il primo articolo</Link>.</p>
             </div>
         </div>
     </AppLayout>

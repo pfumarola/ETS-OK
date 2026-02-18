@@ -11,6 +11,13 @@ class UpdateMemberRequest extends FormRequest
         return $this->user()->can('update', $this->route('member'));
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('codice_fiscale') && trim((string) $this->codice_fiscale) === '') {
+            $this->merge(['codice_fiscale' => null]);
+        }
+    }
+
     public function rules(): array
     {
         if ($this->user()->hasRole('admin', 'segreteria')) {
@@ -20,7 +27,7 @@ class UpdateMemberRequest extends FormRequest
                 'nome' => 'required|string|max:255',
                 'cognome' => 'required|string|max:255',
                 'email' => 'nullable|email|max:255',
-                'codice_fiscale' => 'required|string|size:16',
+                'codice_fiscale' => 'nullable|string|max:64',
                 'data_iscrizione' => 'nullable|date',
                 'stato' => 'nullable|in:attivo,sospeso,cessato,aspirante,rigettato,in_ricorso,decesso,dimesso,escluso,moroso',
                 'domanda_presentata_at' => 'nullable|date',

@@ -15,7 +15,7 @@ class ItemController extends Controller
 
     public function index()
     {
-        $items = Item::orderBy('name')->get();
+        $items = Item::orderBy('name')->paginate(15);
         return Inertia::render('Items/Index', ['items' => $items]);
     }
 

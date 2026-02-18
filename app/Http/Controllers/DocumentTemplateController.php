@@ -15,7 +15,7 @@ class DocumentTemplateController extends Controller
 
     public function index()
     {
-        $templates = DocumentTemplate::orderBy('nome')->get();
+        $templates = DocumentTemplate::orderBy('nome')->paginate(15);
 
         return Inertia::render('DocumentTemplates/Index', [
             'templates' => $templates,

@@ -1,10 +1,10 @@
 <script setup>
-import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-const props = defineProps({ templates: Array });
+const props = defineProps({ templates: Object });
 
 function elimina(t) {
     if (!confirm(`Eliminare il template "${t.nome}"?`)) return;
@@ -38,7 +38,7 @@ function elimina(t) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="t in templates" :key="t.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <tr v-for="t in templates.data" :key="t.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">{{ t.nome }}</td>
                                 <td class="px-4 py-2 text-right">
                                     <Link :href="route('document-templates.edit', { document_template: t.id })" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline me-3">
@@ -55,7 +55,12 @@ function elimina(t) {
                             </tr>
                         </tbody>
                     </table>
-                    <div v-if="!templates?.length" class="px-4 py-8 text-center text-gray-500">Nessun template. Creane uno per usarlo nella redazione dei documenti.</div>
+                    <div v-if="!templates.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun template. Creane uno per usarlo nella redazione dei documenti.</div>
+                    <div v-if="templates.prev_page_url || templates.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="templates.prev_page_url" :href="templates.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="templates.next_page_url" :href="templates.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
             </div>
         </div>

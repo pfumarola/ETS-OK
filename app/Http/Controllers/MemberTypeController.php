@@ -18,7 +18,7 @@ class MemberTypeController extends Controller
 
     public function index()
     {
-        $types = MemberType::withCount('members')->orderBy('name')->get();
+        $types = MemberType::withCount('members')->orderBy('name')->paginate(15);
         return Inertia::render('MemberTypes/Index', ['memberTypes' => $types]);
     }
 

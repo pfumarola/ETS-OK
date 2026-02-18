@@ -1,10 +1,10 @@
 <script setup>
-import { PlusIcon, EyeIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, EyeIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-defineProps({ warehouses: Array });
+defineProps({ warehouses: Object });
 </script>
 
 <template>
@@ -31,7 +31,7 @@ defineProps({ warehouses: Array });
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="w in warehouses" :key="w.id">
+                            <tr v-for="w in warehouses.data" :key="w.id">
                                 <td class="px-4 py-2">{{ w.name }}</td>
                                 <td class="px-4 py-2">{{ w.location?.name || '—' }}</td>
                                 <td class="px-4 py-2 text-right">
@@ -41,6 +41,12 @@ defineProps({ warehouses: Array });
                             </tr>
                         </tbody>
                     </table>
+                    <p v-if="!warehouses.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun magazzino. <Link :href="route('warehouses.create')" class="text-indigo-600 dark:text-indigo-400 hover:underline">Aggiungi il primo magazzino</Link>.</p>
+                    <div v-if="warehouses.prev_page_url || warehouses.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="warehouses.prev_page_url" :href="warehouses.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="warehouses.next_page_url" :href="warehouses.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
             </div>
         </div>

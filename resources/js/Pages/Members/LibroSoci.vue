@@ -1,10 +1,10 @@
 <script setup>
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
-    members: Array,
+    members: Object,
 });
 </script>
 
@@ -33,7 +33,7 @@ const props = defineProps({
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="(m, index) in members" :key="m.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <tr v-for="(m, index) in members.data" :key="m.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ index + 1 }}</td>
                                 <td class="px-4 py-2">
                                     <Link :href="route('members.show', m.id)" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ m.cognome }}</Link>
@@ -44,7 +44,12 @@ const props = defineProps({
                             </tr>
                         </tbody>
                     </table>
-                    <p v-if="!members?.length" class="px-4 py-8 text-center text-gray-500">Nessun socio nel libro.</p>
+                    <p v-if="!members.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun socio nel libro.</p>
+                    <div v-if="members.prev_page_url || members.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="members.prev_page_url" :href="members.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="members.next_page_url" :href="members.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
             </div>
         </div>

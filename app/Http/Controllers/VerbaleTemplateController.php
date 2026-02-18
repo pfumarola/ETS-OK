@@ -15,7 +15,7 @@ class VerbaleTemplateController extends Controller
 
     public function index()
     {
-        $templates = VerbaleTemplate::orderBy('nome')->get();
+        $templates = VerbaleTemplate::orderBy('nome')->paginate(15);
 
         return Inertia::render('VerbaleTemplates/Index', [
             'templates' => $templates,

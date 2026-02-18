@@ -1,5 +1,5 @@
 <script setup>
-import { EyeIcon, PlusIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import { EyeIcon, PlusIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -43,6 +43,12 @@ defineProps({ events: Object });
                             </tr>
                         </tbody>
                     </table>
+                    <p v-if="!events.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun evento.</p>
+                    <div v-if="events.prev_page_url || events.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="events.prev_page_url" :href="events.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="events.next_page_url" :href="events.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
             </div>
         </div>

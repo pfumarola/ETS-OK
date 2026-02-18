@@ -16,7 +16,7 @@ class PropertyController extends Controller
 
     public function index()
     {
-        $properties = Property::withCount('assets')->orderBy('name')->get();
+        $properties = Property::withCount('assets')->orderBy('name')->paginate(15);
         return Inertia::render('Properties/Index', ['properties' => $properties]);
     }
 

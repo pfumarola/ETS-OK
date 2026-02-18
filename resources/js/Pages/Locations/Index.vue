@@ -1,10 +1,10 @@
 <script setup>
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-defineProps({ locations: Array });
+defineProps({ locations: Object });
 
 function elimina(id) {
     if (!confirm('Eliminare questa sede?')) return;
@@ -37,7 +37,7 @@ function elimina(id) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                            <tr v-for="loc in locations" :key="loc.id">
+                            <tr v-for="loc in locations.data" :key="loc.id">
                                 <td class="px-4 py-2">{{ loc.name }}</td>
                                 <td class="px-4 py-2">{{ loc.address || '—' }}</td>
                                 <td class="px-4 py-2">{{ loc.warehouses_count ?? 0 }}</td>
@@ -48,8 +48,13 @@ function elimina(id) {
                             </tr>
                         </tbody>
                     </table>
+                    <p v-if="!locations.data?.length" class="px-4 py-8 text-center text-gray-500">Nessuna sede. <Link :href="route('locations.create')" class="text-indigo-600 dark:text-indigo-400 hover:underline">Aggiungi la prima sede</Link>.</p>
+                    <div v-if="locations.prev_page_url || locations.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="locations.prev_page_url" :href="locations.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="locations.next_page_url" :href="locations.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
-                <p v-if="!locations?.length" class="mt-4 text-sm text-gray-500 dark:text-gray-400">Nessuna sede. <Link :href="route('locations.create')" class="text-indigo-600 dark:text-indigo-400 hover:underline">Aggiungi la prima sede</Link>.</p>
             </div>
         </div>
     </AppLayout>

@@ -1,5 +1,5 @@
 <script setup>
-import { PlusIcon, FunnelIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
 import { reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -75,6 +75,11 @@ const search = () => router.get(route('prima-nota.index'), form);
                         </tbody>
                     </table>
                     <p v-if="!entries.data?.length" class="px-4 py-8 text-center text-gray-500">Nessun movimento.</p>
+                    <div v-if="entries.prev_page_url || entries.next_page_url" class="px-4 py-2 border-t flex justify-between">
+                        <Link v-if="entries.prev_page_url" :href="entries.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"><ArrowLeftIcon class="size-4" aria-hidden="true" />Indietro</Link>
+                        <span v-else></span>
+                        <Link v-if="entries.next_page_url" :href="entries.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti<ArrowRightIcon class="size-4" aria-hidden="true" /></Link>
+                    </div>
                 </div>
             </div>
         </div>

@@ -11,6 +11,13 @@ class StoreMemberRequest extends FormRequest
         return $this->user()->can('create', \App\Models\Member::class);
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('codice_fiscale') && trim((string) $this->codice_fiscale) === '') {
+            $this->merge(['codice_fiscale' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -19,7 +26,7 @@ class StoreMemberRequest extends FormRequest
             'nome' => 'required|string|max:255',
             'cognome' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
-            'codice_fiscale' => 'required|string|size:16',
+            'codice_fiscale' => 'nullable|string|max:64',
             'data_iscrizione' => 'nullable|date',
             'stato' => 'nullable|in:attivo,sospeso,cessato,aspirante',
             'presentare_domanda' => 'nullable|boolean',
