@@ -196,8 +196,8 @@ class ElezioneController extends Controller
         if (! $member) {
             return redirect()->route('dashboard')->with('flash', ['type' => 'error', 'message' => 'Solo i soci possono votare.']);
         }
-        if (! Member::nonCessati()->where('id', $member->id)->exists()) {
-            return redirect()->route('dashboard')->with('flash', ['type' => 'error', 'message' => 'Non sei abilitato a votare.']);
+        if ($member->stato !== 'attivo') {
+            return redirect()->route('dashboard')->with('flash', ['type' => 'error', 'message' => 'Solo i soci con stato Attivo possono accedere all\'area soci e votare.']);
         }
         if ($elezione->stato !== Elezione::STATO_APERTA || ! $elezione->isAperta()) {
             return redirect()->route('dashboard')->with('flash', ['type' => 'error', 'message' => 'Questa votazione non è aperta o non è nel periodo di voto.']);
@@ -220,8 +220,8 @@ class ElezioneController extends Controller
         if (! $member) {
             return back()->with('flash', ['type' => 'error', 'message' => 'Solo i soci possono votare.']);
         }
-        if (! Member::nonCessati()->where('id', $member->id)->exists()) {
-            return back()->with('flash', ['type' => 'error', 'message' => 'Non sei abilitato a votare.']);
+        if ($member->stato !== 'attivo') {
+            return back()->with('flash', ['type' => 'error', 'message' => 'Solo i soci con stato Attivo possono votare.']);
         }
         if ($elezione->stato !== Elezione::STATO_APERTA || ! $elezione->isAperta()) {
             return back()->with('flash', ['type' => 'error', 'message' => 'Votazione non aperta.']);

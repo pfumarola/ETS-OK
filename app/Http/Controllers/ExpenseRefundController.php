@@ -31,6 +31,10 @@ class ExpenseRefundController extends Controller
         $authMember = $user->member;
         $isSocioOnly = $authMember && $user->hasRole('socio') && ! $user->hasRole('admin') && ! $user->hasRole('segreteria') && ! $user->hasRole('contabile');
 
+        if ($isSocioOnly && $authMember->stato !== 'attivo') {
+            abort(403, 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.');
+        }
+
         $query = ExpenseRefund::with('member')->orderByDesc('refund_date');
         if ($isSocioOnly) {
             $query->where('member_id', $authMember->id);
@@ -51,6 +55,10 @@ class ExpenseRefundController extends Controller
         $user = auth()->user();
         $authMember = $user->member;
         $requestForSelf = $authMember && $user->hasRole('socio') && ! $user->hasRole('admin') && ! $user->hasRole('segreteria') && ! $user->hasRole('contabile');
+
+        if ($requestForSelf && $authMember->stato !== 'attivo') {
+            abort(403, 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.');
+        }
 
         if ($requestForSelf) {
             return Inertia::render('ExpenseRefunds/Create', [
@@ -75,6 +83,10 @@ class ExpenseRefundController extends Controller
         $user = auth()->user();
         $authMember = $user->member;
         $requestForSelf = $authMember && $user->hasRole('socio') && ! $user->hasRole('admin') && ! $user->hasRole('segreteria') && ! $user->hasRole('contabile');
+
+        if ($requestForSelf && $authMember->stato !== 'attivo') {
+            abort(403, 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.');
+        }
 
         $rules = [
             'member_id' => 'required|exists:members,id',
@@ -120,6 +132,9 @@ class ExpenseRefundController extends Controller
     {
         $user = auth()->user();
         if ($user->member && ! $user->hasRole('admin') && ! $user->hasRole('segreteria') && ! $user->hasRole('contabile')) {
+            if ($user->member->stato !== 'attivo') {
+                abort(403, 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.');
+            }
             if ((int) $expenseRefund->member_id !== (int) $user->member->id) {
                 abort(403, 'Non autorizzato a visualizzare questo rimborso.');
             }
@@ -160,6 +175,9 @@ class ExpenseRefundController extends Controller
 
         $user = auth()->user();
         if ($user->member && ! $user->hasRole('admin') && ! $user->hasRole('segreteria') && ! $user->hasRole('contabile')) {
+            if ($user->member->stato !== 'attivo') {
+                abort(403, 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.');
+            }
             if ((int) $expenseRefund->member_id !== (int) $user->member->id) {
                 abort(403, 'Non autorizzato a modificare questo rimborso.');
             }
@@ -308,6 +326,16 @@ class ExpenseRefundController extends Controller
      */
     public function print(ExpenseRefund $expenseRefund, ReceiptService $receiptService): StreamedResponse
     {
+        $user = auth()->user();
+        if ($user->member && ! $user->hasRole('admin') && ! $user->hasRole('segreteria') && ! $user->hasRole('contabile')) {
+            if ($user->member->stato !== 'attivo') {
+                abort(403, 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.');
+            }
+            if ((int) $expenseRefund->member_id !== (int) $user->member->id) {
+                abort(403, 'Non autorizzato.');
+            }
+        }
+
         $status = $expenseRefund->status;
 
         if ($expenseRefund->receipt) {

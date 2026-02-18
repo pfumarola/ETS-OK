@@ -147,6 +147,10 @@ class EventController extends Controller
 
     public function register(Request $request, Event $event)
     {
+        $user = $request->user();
+        if ($user->member && $user->hasRole('socio') && ! $user->hasRole('admin', 'segreteria', 'contabile') && $user->member->stato !== 'attivo') {
+            return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.']);
+        }
         if ($event->solo_soci) {
             $request->validate(['member_id' => 'required|exists:members,id']);
             EventRegistration::firstOrCreate(
@@ -184,6 +188,10 @@ class EventController extends Controller
     {
         if ($registration->event_id !== $event->id) {
             abort(404);
+        }
+        $user = request()->user();
+        if ($user->member && $user->hasRole('socio') && ! $user->hasRole('admin', 'segreteria', 'contabile') && (int) $registration->member_id === (int) $user->member->id && $user->member->stato !== 'attivo') {
+            abort(403, 'L\'accesso all\'area soci non è disponibile per il tuo stato attuale.');
         }
         $registration->delete();
         return redirect()->back()->with('flash', ['type' => 'success', 'message' => 'Iscrizione annullata.']);

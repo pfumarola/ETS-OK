@@ -149,6 +149,10 @@ class MemberController extends Controller
             return $this->memberShowWithAccessError($member, 'Accesso area soci già attivo.');
         }
 
+        if ($member->stato !== 'attivo') {
+            return $this->memberShowWithAccessError($member, 'L\'accesso area soci può essere attivato solo per soci con stato Attivo.');
+        }
+
         if (empty($member->email)) {
             return $this->memberShowWithAccessError($member, 'Il socio deve avere un indirizzo email per attivare l\'accesso.');
         }

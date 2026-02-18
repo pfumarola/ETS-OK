@@ -26,9 +26,15 @@ class DashboardController extends Controller
             ]);
         }
 
-        // Socio con profilo collegato: dashboard semplificata (solo area personale)
+        // Socio con profilo collegato e stato attivo: dashboard semplificata (solo area personale)
         if ($user->hasRole('socio') && $user->member && ! $user->hasRole('admin', 'segreteria', 'contabile')) {
             $member = $user->member;
+            if ($member->stato !== 'attivo') {
+                return Inertia::render('Dashboard', [
+                    'forSocio' => false,
+                    'memberStatusBlocked' => true,
+                ]);
+            }
             $inRegolaConQuota = $member->isInRegolaConQuota();
             $today = now()->startOfDay();
             $votazioniAperte = Elezione::where('stato', Elezione::STATO_APERTA)

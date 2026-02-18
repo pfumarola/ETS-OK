@@ -7,6 +7,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 defineProps({
     forSocio: Boolean,
     noRole: { type: Boolean, default: false },
+    memberStatusBlocked: { type: Boolean, default: false },
     member: Object,
     votazioniAperte: { type: Array, default: () => [] },
     members_count: Number,
@@ -33,6 +34,14 @@ defineProps({
                     <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Account in attesa di attivazione</h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Il tuo account non ha ancora un ruolo assegnato. Non puoi accedere ai contenuti dell’area riservata. Contatta un amministratore per ottenere l’attivazione.</p>
+                    </div>
+                </div>
+
+                <!-- Socio con stato diverso da Attivo: accesso area soci non disponibile -->
+                <div v-else-if="memberStatusBlocked" class="space-y-4">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Accesso all'area soci non disponibile</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">L'accesso all'area riservata è consentito solo ai soci con stato <strong>Attivo</strong>. Per il tuo stato attuale non puoi accedere ai contenuti riservati. Contatta la segreteria per informazioni.</p>
                     </div>
                 </div>
 

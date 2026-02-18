@@ -136,8 +136,8 @@ const submitEsclusione = () => {
                 </dl>
             </div>
 
-            <!-- Accesso area soci (solo staff) -->
-            <div v-if="canManage" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <!-- Accesso area soci (solo staff, solo socio attivo) -->
+            <div v-if="canManage && member.stato === 'attivo'" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Accesso area soci</h3>
                 <p v-if="member.user_id" class="text-sm text-gray-600 dark:text-gray-400 mb-2">Il socio può accedere all’area riservata con il proprio account.</p>
                 <p v-else class="text-sm text-gray-600 dark:text-gray-400 mb-2">Il socio non ha ancora accesso all’area riservata.</p>
@@ -177,8 +177,8 @@ const submitEsclusione = () => {
             </div>
 
 
-            <!-- Cariche sociali (solo staff) -->
-            <div v-if="canManage" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <!-- Cariche sociali (solo staff, solo socio attivo) -->
+            <div v-if="canManage && member.stato === 'attivo'" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Cariche sociali</h3>
                     <PrimaryButton v-if="!showIncaricoForm" type="button" @click="showIncaricoForm = true"><PlusIcon class="size-4 me-2" aria-hidden="true" />Assegna carica</PrimaryButton>

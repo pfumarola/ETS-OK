@@ -20,8 +20,8 @@ class MemberPolicy
         if ($user->hasRole('admin', 'segreteria')) {
             return true;
         }
-        // Socio può vedere solo se stesso (member collegato al proprio user)
-        return $user->member && $user->member->id === $member->id;
+        // Socio può vedere solo se stesso e solo se ha stato attivo
+        return $user->member && $user->member->id === $member->id && $user->member->stato === 'attivo';
     }
 
     public function create(User $user): bool
@@ -34,7 +34,7 @@ class MemberPolicy
         if ($user->hasRole('admin', 'segreteria')) {
             return true;
         }
-        return $user->member && $user->member->id === $member->id;
+        return $user->member && $user->member->id === $member->id && $user->member->stato === 'attivo';
     }
 
     public function delete(User $user, Member $member): bool
