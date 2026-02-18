@@ -204,31 +204,6 @@ const logout = () => {
                         <UserCircleIcon class="size-5 shrink-0" aria-hidden="true" />
                         La mia tessera
                     </ResponsiveNavLink>
-                    <!-- Cassa: visibile a staff e socio (socio vede solo "I miei rimborsi") -->
-                    <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile') || $page.props.userRoles?.includes('socio')" class="pt-2">
-                        <button type="button" class="block w-full inline-flex items-center gap-2 ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 dark:text-gray-400" @click="toggleSection('cassa')">
-                            <CreditCardIcon class="size-5 shrink-0" aria-hidden="true" />
-                            <span class="flex-1">Cassa</span>
-                            <ChevronDownIcon v-if="openSections.cassa" class="size-4 shrink-0" aria-hidden="true" />
-                            <ChevronRightIcon v-else class="size-4 shrink-0" aria-hidden="true" />
-                        </button>
-                        <div v-show="openSections.cassa" class="space-y-0.5 ps-6">
-                            <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile')">
-                                <ResponsiveNavLink :href="route('incassi.index')" :active="route().current('incassi.*')">
-                                    <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
-                                    Incassi
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
-                                    <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
-                                    Ricevute
-                                </ResponsiveNavLink>
-                            </template>
-                            <ResponsiveNavLink :href="route('expense-refunds.index')" :active="route().current('expense-refunds.*')">
-                                <BanknotesIcon class="size-4 shrink-0" aria-hidden="true" />
-                                {{ $page.props.userRoles?.includes('socio') && !$page.props.userRoles?.includes('admin') && !$page.props.userRoles?.includes('segreteria') && !$page.props.userRoles?.includes('contabile') ? 'I miei rimborsi' : 'Rimborsi' }}
-                            </ResponsiveNavLink>
-                        </div>
-                    </div>
                     <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')">
                         <div class="pt-2">
                             <button type="button" class="block w-full inline-flex items-center gap-2 ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 dark:text-gray-400" @click="toggleSection('soci')">
@@ -322,7 +297,33 @@ const logout = () => {
                                 </ResponsiveNavLink>
                             </div>
                         </div>
-                        <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('contabile')" class="pt-2">
+                    </template>
+                    <!-- Cassa: visibile a staff e socio (socio vede solo "I miei rimborsi") -->
+                    <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile') || $page.props.userRoles?.includes('socio')" class="pt-2">
+                            <button type="button" class="block w-full inline-flex items-center gap-2 ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 dark:text-gray-400" @click="toggleSection('cassa')">
+                                <CreditCardIcon class="size-5 shrink-0" aria-hidden="true" />
+                                <span class="flex-1">Cassa</span>
+                                <ChevronDownIcon v-if="openSections.cassa" class="size-4 shrink-0" aria-hidden="true" />
+                                <ChevronRightIcon v-else class="size-4 shrink-0" aria-hidden="true" />
+                            </button>
+                            <div v-show="openSections.cassa" class="space-y-0.5 ps-6">
+                                <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile')">
+                                    <ResponsiveNavLink :href="route('incassi.index')" :active="route().current('incassi.*')">
+                                        <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
+                                        Incassi
+                                    </ResponsiveNavLink>
+                                    <ResponsiveNavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
+                                        <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
+                                        Ricevute
+                                    </ResponsiveNavLink>
+                                </template>
+                                <ResponsiveNavLink :href="route('expense-refunds.index')" :active="route().current('expense-refunds.*')">
+                                    <BanknotesIcon class="size-4 shrink-0" aria-hidden="true" />
+                                    {{ $page.props.userRoles?.includes('socio') && !$page.props.userRoles?.includes('admin') && !$page.props.userRoles?.includes('segreteria') && !$page.props.userRoles?.includes('contabile') ? 'I miei rimborsi' : 'Rimborsi' }}
+                                </ResponsiveNavLink>
+                            </div>
+                    </div>
+                    <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('contabile')" class="pt-2">
                             <button type="button" class="block w-full inline-flex items-center gap-2 ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 dark:text-gray-400" @click="toggleSection('contabilita')">
                                 <ChartBarIcon class="size-5 shrink-0" aria-hidden="true" />
                                 <span class="flex-1">Contabilità</span>
@@ -343,16 +344,15 @@ const logout = () => {
                                     Rendiconto per cassa
                                 </ResponsiveNavLink>
                             </div>
-                        </div>
-                        <ResponsiveNavLink v-if="$page.props.userRoles?.includes('admin')" :href="route('users.index')" :active="route().current('users.*')">
+                    </div>
+                    <ResponsiveNavLink v-if="$page.props.userRoles?.includes('admin')" :href="route('users.index')" :active="route().current('users.*')">
                             <UsersIcon class="size-5 shrink-0" aria-hidden="true" />
                             Utenti
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink v-if="$page.props.userRoles?.includes('admin')" :href="route('settings.index')" :active="route().current('settings.*')">
-                            <Cog6ToothIcon class="size-5 shrink-0" aria-hidden="true" />
-                            Impostazioni
-                        </ResponsiveNavLink>
-                    </template>
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink v-if="$page.props.userRoles?.includes('admin')" :href="route('settings.index')" :active="route().current('settings.*')">
+                        <Cog6ToothIcon class="size-5 shrink-0" aria-hidden="true" />
+                        Impostazioni
+                    </ResponsiveNavLink>
                 </div>
             </div>
 
@@ -375,31 +375,6 @@ const logout = () => {
                                 <UserCircleIcon class="size-5 shrink-0" aria-hidden="true" />
                                 La mia tessera
                             </NavLink>
-                            <!-- Cassa: visibile a staff e socio (socio vede solo "I miei rimborsi") -->
-                            <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile') || $page.props.userRoles?.includes('socio')" class="mt-2">
-                                <button type="button" class="block w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border-l-4 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50" @click="toggleSection('cassa')">
-                                    <CreditCardIcon class="size-5 shrink-0" aria-hidden="true" />
-                                    <span class="flex-1 text-start">Cassa</span>
-                                    <ChevronDownIcon v-if="openSections.cassa" class="size-4 shrink-0" aria-hidden="true" />
-                                    <ChevronRightIcon v-else class="size-4 shrink-0" aria-hidden="true" />
-                                </button>
-                                <div v-show="openSections.cassa" class="space-y-0.5 pl-4 ml-1 border-l border-gray-200 dark:border-gray-600">
-                                    <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile')">
-                                        <NavLink :href="route('incassi.index')" :active="route().current('incassi.*')">
-                                            <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
-                                            Incassi
-                                        </NavLink>
-                                        <NavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
-                                            <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
-                                            Ricevute
-                                        </NavLink>
-                                    </template>
-                                    <NavLink :href="route('expense-refunds.index')" :active="route().current('expense-refunds.*')">
-                                        <BanknotesIcon class="size-4 shrink-0" aria-hidden="true" />
-                                        {{ $page.props.userRoles?.includes('socio') && !$page.props.userRoles?.includes('admin') && !$page.props.userRoles?.includes('segreteria') && !$page.props.userRoles?.includes('contabile') ? 'I miei rimborsi' : 'Rimborsi' }}
-                                    </NavLink>
-                                </div>
-                            </div>
                             <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')">
                                 <!-- Soci -->
                                 <div class="mt-2">
@@ -494,6 +469,31 @@ const logout = () => {
                                         <NavLink :href="route('warehouses.index')" :active="route().current('warehouses.*')">
                                             <CubeIcon class="size-4 shrink-0" aria-hidden="true" />
                                             Magazzino
+                                        </NavLink>
+                                    </div>
+                                </div>
+                                <!-- Cassa: visibile a staff e socio (socio vede solo "I miei rimborsi") -->
+                                <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile') || $page.props.userRoles?.includes('socio')" class="mt-2">
+                                    <button type="button" class="block w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border-l-4 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50" @click="toggleSection('cassa')">
+                                        <CreditCardIcon class="size-5 shrink-0" aria-hidden="true" />
+                                        <span class="flex-1 text-start">Cassa</span>
+                                        <ChevronDownIcon v-if="openSections.cassa" class="size-4 shrink-0" aria-hidden="true" />
+                                        <ChevronRightIcon v-else class="size-4 shrink-0" aria-hidden="true" />
+                                    </button>
+                                    <div v-show="openSections.cassa" class="space-y-0.5 pl-4 ml-1 border-l border-gray-200 dark:border-gray-600">
+                                        <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile')">
+                                            <NavLink :href="route('incassi.index')" :active="route().current('incassi.*')">
+                                                <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
+                                                Incassi
+                                            </NavLink>
+                                            <NavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
+                                                <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
+                                                Ricevute
+                                            </NavLink>
+                                        </template>
+                                        <NavLink :href="route('expense-refunds.index')" :active="route().current('expense-refunds.*')">
+                                            <BanknotesIcon class="size-4 shrink-0" aria-hidden="true" />
+                                            {{ $page.props.userRoles?.includes('socio') && !$page.props.userRoles?.includes('admin') && !$page.props.userRoles?.includes('segreteria') && !$page.props.userRoles?.includes('contabile') ? 'I miei rimborsi' : 'Rimborsi' }}
                                         </NavLink>
                                     </div>
                                 </div>
