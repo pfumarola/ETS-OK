@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\MemberInvite;
 use App\Models\MemberType;
 use App\Models\Settings;
+use App\Services\PlaceholderResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
@@ -87,13 +88,14 @@ class MemberInviteController extends Controller
             ]);
         }
 
+        $privacyRaw = Settings::get('informativa_privacy_domanda_ammissione', '');
         return Inertia::render('Members/AdmissionRequestForm', [
             'token' => $token,
             'email' => $invite->email,
             'memberTypes' => MemberType::orderBy('name')->get(['id', 'name', 'display_name']),
             'appName' => Settings::get('nome_associazione', config('app.name')),
             'invalid' => false,
-            'privacy_informativa' => Settings::get('informativa_privacy_domanda_ammissione', ''),
+            'privacy_informativa' => PlaceholderResolver::resolve($privacyRaw, []),
         ]);
     }
 
