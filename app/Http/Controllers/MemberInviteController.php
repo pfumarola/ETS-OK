@@ -21,6 +21,8 @@ class MemberInviteController extends Controller
     {
         $this->authorize('create', Member::class);
 
+        MemberInvite::runCleanupIfDue();
+
         return Inertia::render('Members/Invite');
     }
 
@@ -78,6 +80,8 @@ class MemberInviteController extends Controller
      */
     public function showAdmissionRequestForm(string $token)
     {
+        MemberInvite::runCleanupIfDue();
+
         $invite = MemberInvite::where('token', $token)->first();
 
         if (! $invite || ! $invite->isValid()) {

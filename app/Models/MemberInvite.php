@@ -48,6 +48,29 @@ class MemberInvite extends Model
     }
 
     /**
+     * Elimina gli inviti scaduti (expires_at < now()). Restituisce il numero di record eliminati.
+     */
+    public static function cleanupExpired(): int
+    {
+        return static::where('expires_at', '<', now())->delete();
+    }
+
+    /**
+     * Esegue la pulizia degli inviti scaduti al massimo una volta al mese (usa Cache).
+     * Chiamare da controller così la pulizia avviene senza cron.
+     */
+    public static function runCleanupIfDue(): void
+    {
+        $key = 'member_invites_cleanup_last_run';
+        $lastRun = \Illuminate\Support\Facades\Cache::get($key);
+        if ($lastRun !== null && $lastRun->gt(now()->subMonth())) {
+            return;
+        }
+        static::cleanupExpired();
+        \Illuminate\Support\Facades\Cache::put($key, now(), 86400 * 35); // 35 giorni TTL
+    }
+
+    /**
      * Genera un token univoco (64 caratteri).
      */
     public static function generateUniqueToken(): string
