@@ -164,6 +164,18 @@ class VerbaleController extends Controller
                 ->with('flash', ['type' => 'error', 'message' => 'Il verbale è confermato e non è modificabile.']);
         }
 
+        if (! $request->boolean('force_overwrite')) {
+            $submittedAt = $request->input('_updated_at');
+            if ($submittedAt !== null && $submittedAt !== '') {
+                $verbale->refresh();
+                if (\Carbon\Carbon::parse($verbale->updated_at)->gt(\Carbon\Carbon::parse($submittedAt))) {
+                    return redirect()->back()
+                        ->withErrors(['stale' => 'Questo verbale è stato modificato da un altro utente. Vuoi sovrascrivere comunque?'])
+                        ->withInput();
+                }
+            }
+        }
+
         $anno = \Carbon\Carbon::parse($request->input('data'))->year;
         $request->merge([
             'anno' => $anno,

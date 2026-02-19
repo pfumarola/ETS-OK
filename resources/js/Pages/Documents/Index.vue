@@ -14,7 +14,6 @@ const props = defineProps({ documents: Object });
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Documenti</h2>
                 <div class="flex items-center gap-2">
-                    <Link :href="route('templates.index')" class="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300 text-sm">Template</Link>
                     <Link :href="route('documents.create')">
                         <PrimaryButton><PlusIcon class="size-4 me-2" aria-hidden="true" />Nuovo documento</PrimaryButton>
                     </Link>

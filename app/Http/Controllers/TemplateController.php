@@ -67,6 +67,18 @@ class TemplateController extends Controller
 
     public function update(Request $request, Template $template)
     {
+        if (! $request->boolean('force_overwrite')) {
+            $submittedAt = $request->input('_updated_at');
+            if ($submittedAt !== null && $submittedAt !== '') {
+                $template->refresh();
+                if (\Carbon\Carbon::parse($template->updated_at)->gt(\Carbon\Carbon::parse($submittedAt))) {
+                    return redirect()->back()
+                        ->withErrors(['stale' => 'Questo template è stato modificato da un altro utente. Vuoi sovrascrivere comunque?'])
+                        ->withInput();
+                }
+            }
+        }
+
         $validated = $request->validate([
             'nome' => 'required|string|max:255',
             'categoria' => 'required|in:documento,verbale',

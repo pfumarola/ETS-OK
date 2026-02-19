@@ -1,12 +1,15 @@
 <script setup>
+import { ref, watch } from 'vue';
 import { CheckIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import RichTextEditor from '@/Components/RichTextEditor.vue';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({ template: Object, tipoOptions: Array });
 
@@ -15,7 +18,36 @@ const form = useForm({
     categoria: props.template.categoria ?? 'documento',
     tipo_verbale: props.template.tipo_verbale ?? '',
     contenuto: props.template.contenuto ?? '',
+    _updated_at: props.template?.updated_at ?? '',
 });
+
+const showStaleModal = ref(false);
+
+watch(
+    () => form.errors.stale,
+    (val) => {
+        if (val) showStaleModal.value = true;
+    },
+    { immediate: true },
+);
+
+function closeStaleModal() {
+    showStaleModal.value = false;
+    form.clearErrors('stale');
+}
+
+function submitForceOverwrite() {
+    showStaleModal.value = false;
+    form.clearErrors('stale');
+    router.put(route('templates.update', props.template.id), {
+        nome: form.nome,
+        categoria: form.categoria,
+        tipo_verbale: form.tipo_verbale,
+        contenuto: form.contenuto,
+        _updated_at: form._updated_at,
+        force_overwrite: 1,
+    });
+}
 </script>
 
 <template>
@@ -62,5 +94,16 @@ const form = useForm({
                 </div>
             </form>
         </div>
+
+        <Modal :show="showStaleModal" max-width="md" @close="closeStaleModal">
+            <div class="px-6 py-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Modifiche concorrenti</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ form.errors.stale }}</p>
+            </div>
+            <div class="flex justify-end gap-2 px-6 py-4 bg-gray-100 dark:bg-gray-800">
+                <SecondaryButton type="button" @click="closeStaleModal">Annulla</SecondaryButton>
+                <PrimaryButton type="button" @click="submitForceOverwrite">Sovrascrivi</PrimaryButton>
+            </div>
+        </Modal>
     </AppLayout>
 </template>

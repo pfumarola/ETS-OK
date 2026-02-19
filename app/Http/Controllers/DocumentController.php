@@ -80,6 +80,18 @@ class DocumentController extends Controller
 
     public function update(Request $request, Document $document)
     {
+        if (! $request->boolean('force_overwrite')) {
+            $submittedAt = $request->input('_updated_at');
+            if ($submittedAt !== null && $submittedAt !== '') {
+                $document->refresh();
+                if (\Carbon\Carbon::parse($document->updated_at)->gt(\Carbon\Carbon::parse($submittedAt))) {
+                    return redirect()->back()
+                        ->withErrors(['stale' => 'Questo documento è stato modificato da un altro utente. Vuoi sovrascrivere comunque?'])
+                        ->withInput();
+                }
+            }
+        }
+
         $validated = $request->validate([
             'titolo' => 'required|string|max:255',
             'data' => 'required|date',

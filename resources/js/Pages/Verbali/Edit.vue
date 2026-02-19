@@ -1,7 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { CheckIcon, ArrowLeftIcon, DocumentDuplicateIcon } from '@heroicons/vue/24/outline';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -24,9 +24,38 @@ const form = useForm({
     titolo: props.verbale.titolo ?? '',
     contenuto: props.verbale.contenuto ?? '',
     numero: props.verbale.numero != null ? String(props.verbale.numero) : '',
+    _updated_at: props.verbale?.updated_at ?? '',
 });
 
 const showTemplateModal = ref(false);
+const showStaleModal = ref(false);
+
+watch(
+    () => form.errors.stale,
+    (val) => {
+        if (val) showStaleModal.value = true;
+    },
+    { immediate: true },
+);
+
+function closeStaleModal() {
+    showStaleModal.value = false;
+    form.clearErrors('stale');
+}
+
+function submitForceOverwrite() {
+    showStaleModal.value = false;
+    form.clearErrors('stale');
+    router.put(route('verbali.update', { verbale: props.verbale.id }), {
+        tipo: form.tipo,
+        data: form.data_verbale,
+        titolo: form.titolo,
+        contenuto: form.contenuto,
+        numero: form.numero,
+        _updated_at: form._updated_at,
+        force_overwrite: 1,
+    });
+}
 
 const templatesFiltered = computed(() => {
     if (!props.templates?.length) return [];
@@ -130,6 +159,17 @@ function useTemplate(template) {
             </div>
             <div class="flex justify-end gap-2 px-6 py-4 bg-gray-100 dark:bg-gray-800">
                 <SecondaryButton type="button" @click="showTemplateModal = false">Chiudi</SecondaryButton>
+            </div>
+        </Modal>
+
+        <Modal :show="showStaleModal" max-width="md" @close="closeStaleModal">
+            <div class="px-6 py-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Modifiche concorrenti</h3>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ form.errors.stale }}</p>
+            </div>
+            <div class="flex justify-end gap-2 px-6 py-4 bg-gray-100 dark:bg-gray-800">
+                <SecondaryButton type="button" @click="closeStaleModal">Annulla</SecondaryButton>
+                <PrimaryButton type="button" @click="submitForceOverwrite">Sovrascrivi</PrimaryButton>
             </div>
         </Modal>
     </AppLayout>
