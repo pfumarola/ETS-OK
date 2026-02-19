@@ -6,7 +6,10 @@ use App\Models\Member;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Inertia\Inertia;
 
 /**
@@ -57,6 +60,43 @@ class UserController extends Controller
             'filters' => $request->only('search', 'role', 'has_member'),
             'membersForSelect' => $membersForSelect,
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validIds = Role::pluck('id')->toArray();
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['nullable', 'string', PasswordRule::default()],
+            'role_ids' => ['nullable', 'array'],
+            'role_ids.*' => ['integer', 'in:'.implode(',', $validIds)],
+        ]);
+
+        $password = $request->filled('password')
+            ? Hash::make($request->password)
+            : Hash::make(Str::random(32));
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $password,
+        ]);
+
+        $user->roles()->sync($request->input('role_ids', []));
+
+        $message = 'Utente creato.';
+        if (! $request->filled('password')) {
+            try {
+                Password::sendResetLink(['email' => $user->email]);
+                $message = 'Utente creato. È stata inviata un\'email per impostare la password.';
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return redirect()->route('users.index')
+            ->with('flash', ['type' => 'success', 'message' => $message]);
     }
 
     public function updateRoles(Request $request, User $user)

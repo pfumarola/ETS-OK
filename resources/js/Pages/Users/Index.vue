@@ -1,10 +1,12 @@
 <script setup>
-import { FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon, EllipsisVerticalIcon, UserPlusIcon, UserMinusIcon, EnvelopeIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon, EllipsisVerticalIcon, UserPlusIcon, UserMinusIcon, EnvelopeIcon, TrashIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import { reactive, ref } from 'vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
+import InputError from '@/Components/InputError.vue';
+import InputLabel from '@/Components/InputLabel.vue';
 import Modal from '@/Components/Modal.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
@@ -30,6 +32,29 @@ const form = reactive({
 const search = () => {
     router.get(route('users.index'), form);
 };
+
+const showCreateModal = ref(false);
+const createForm = useForm({
+    name: '',
+    email: '',
+    password: '',
+    role_ids: [],
+});
+
+function openCreateModal() {
+    createForm.reset();
+    showCreateModal.value = true;
+}
+
+function submitCreate() {
+    createForm.post(route('users.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showCreateModal.value = false;
+            createForm.reset();
+        },
+    });
+}
 
 const showRolesModal = ref(false);
 const userForRoles = ref(null);
@@ -97,6 +122,10 @@ function deleteUser(user) {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Utenti</h2>
+                <PrimaryButton type="button" @click="openCreateModal">
+                    <PlusIcon class="size-4 me-2" aria-hidden="true" />
+                    Crea utente
+                </PrimaryButton>
             </div>
         </template>
 
@@ -193,6 +222,47 @@ function deleteUser(user) {
                 </div>
             </div>
         </div>
+
+        <!-- Modale Crea utente -->
+        <Modal :show="showCreateModal" max-width="md" @close="showCreateModal = false">
+            <form @submit.prevent="submitCreate" class="space-y-4">
+                <div class="px-6 py-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Crea utente</h3>
+                    <div class="mt-4 space-y-4">
+                        <div>
+                            <InputLabel for="create-name" value="Nome *" />
+                            <TextInput id="create-name" v-model="createForm.name" type="text" class="mt-1 block w-full" />
+                            <InputError class="mt-1" :message="createForm.errors.name" />
+                        </div>
+                        <div>
+                            <InputLabel for="create-email" value="Email account *" />
+                            <TextInput id="create-email" v-model="createForm.email" type="email" class="mt-1 block w-full" />
+                            <InputError class="mt-1" :message="createForm.errors.email" />
+                        </div>
+                        <div>
+                            <InputLabel for="create-password" value="Password" />
+                            <TextInput id="create-password" v-model="createForm.password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Se lasciato vuoto verrà inviata un'email per impostare la password.</p>
+                            <InputError class="mt-1" :message="createForm.errors.password" />
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ruoli</p>
+                            <div class="flex flex-wrap gap-4">
+                                <label v-for="r in roles" :key="r.id" class="inline-flex items-center gap-2 cursor-pointer">
+                                    <input v-model="createForm.role_ids" type="checkbox" :value="r.id" class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800" />
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ r.display_name || r.name }}</span>
+                                </label>
+                            </div>
+                            <InputError class="mt-1" :message="createForm.errors.role_ids" />
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 px-6 py-4 bg-gray-100 dark:bg-gray-800">
+                    <SecondaryButton type="button" @click="showCreateModal = false">Annulla</SecondaryButton>
+                    <PrimaryButton type="submit" :disabled="createForm.processing">Crea</PrimaryButton>
+                </div>
+            </form>
+        </Modal>
 
         <!-- Modale Modifica ruoli -->
         <Modal :show="showRolesModal" max-width="md" @close="showRolesModal = false">

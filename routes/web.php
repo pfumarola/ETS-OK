@@ -66,6 +66,7 @@ Route::middleware([
 
     // Utenti (solo admin)
     Route::get('users', [UserController::class, 'index'])->name('users.index');
+    Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::put('users/{user}/roles', [UserController::class, 'updateRoles'])->name('users.roles.update');
     Route::put('users/{user}/member', [UserController::class, 'linkMember'])->name('users.member.update');
     Route::post('users/{user}/send-password-reset', [UserController::class, 'sendPasswordResetLink'])->name('users.send-password-reset');

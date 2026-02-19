@@ -60,7 +60,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
 ## 4. Modelli e dominio
 
-- **User** (auth) ↔ **Member** (relazione 1:1 opzionale): un socio può avere un account per area self-service; `User` ha `member()` e `Member` ha `user()`.
+- **User** (auth) ↔ **Member** (relazione 1:1 opzionale): un socio può avere un account per area self-service; `User` ha `member()` e `Member` ha `user()`. **Gestione utenti** (solo admin): pagina Utenti (`Users/Index.vue`) con elenco, filtri, creazione utente (modale: nome, email, password opzionale, ruoli), modifica ruoli, collegamento/scollegamento socio, invio link reset password, eliminazione; `UserController`, route `users.index`, `users.store`, `users.roles.update`, `users.member.update`, ecc.
 
 - **Ruoli**: `admin`, `contabile`, `segreteria`, `socio` (tabelle `roles` e `role_user`). Middleware `role:admin,segreteria` ecc. registrato in `bootstrap/app.php`; usato nelle route o nei controller.
 
@@ -124,6 +124,8 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
 - **PDF**: DomPDF per ricevute, rendiconto cassa, documenti, verbali e carta intestata; template in `resources/views/receipts/`, `resources/views/rendiconto_cassa/`, `resources/views/pdf/letterhead.blade.php`, `resources/views/documents/pdf.blade.php`, `resources/views/verbali/pdf.blade.php`.
 
+- **Modifica documenti/verbali/template**: in **update** si usa un controllo "stale" (conflitto di modifica): il frontend invia `_updated_at` (quando l’utente ha aperto il form); se in DB il record è stato modificato dopo (`updated_at` più recente), il backend risponde con errore `stale` e redirect; il frontend mostra un modale "Annulla" / "Sovrascrivi"; in caso di "Sovrascrivi" si rinvia la richiesta con `force_overwrite=1`. Controllo in `DocumentController`, `VerbaleController`, `TemplateController` (metodo `update`); modale e `_updated_at` nelle pagine Edit (Documents/Edit.vue, Verbali/Edit.vue, Templates/Edit.vue).
+
 - **Tema**: `resources/js/Composables/useTheme.js` e componente `ThemeTriStateButton` per tema chiaro/scuro/system.
 
 ---
@@ -155,6 +157,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 | **Placeholder nei documenti/verbali** | `app/Services/PlaceholderResolver.php` (risoluzione al salvataggio); inserimento da toolbar in `resources/js/Components/RichTextEditor.vue` (dropdown «Placeholder»). |
 | **Messaggi flash** | Backend: `with('flash', ['type' => 'success'|'error'|'info', 'message' => '...'])`. Frontend: componente `FlashToast` e `page.props.flash`. |
 | **Ruoli e permessi** | Middleware `app/Http/Middleware/EnsureUserHasRole.php`, registrazione in `bootstrap/app.php`, seed in `database/seeders/RoleSeeder.php`. |
+| **Gestione utenti (creazione, ruoli, socio)** | `App\Http\Controllers\UserController` (solo admin), route `users.index`, `users.store`, `users.roles.update`, `users.member.update`, `users.send-password-reset`, `users.destroy`; pagina `resources/js/Pages/Users/Index.vue` (modali: Crea utente, Modifica ruoli, Collega socio). |
 
 ---
 
