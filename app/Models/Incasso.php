@@ -22,7 +22,7 @@ class Incasso extends Model
         'subscription_id',
         'amount',
         'paid_at',
-        'payment_method_id',
+        'conto_id',
         'description',
         'receipt_issued_at',
         'genera_prima_nota',
@@ -65,9 +65,9 @@ class Incasso extends Model
         return $this->belongsTo(Subscription::class);
     }
 
-    public function paymentMethod(): BelongsTo
+    public function conto(): BelongsTo
     {
-        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+        return $this->belongsTo(Conto::class);
     }
 
     public function receipt(): MorphOne

@@ -65,13 +65,14 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 - **Ruoli**: `admin`, `contabile`, `segreteria`, `socio` (tabelle `roles` e `role_user`). Middleware `role:admin,segreteria` ecc. registrato in `bootstrap/app.php`; usato nelle route o nei controller.
 
 - **Modelli principali**:  
-  Member, MemberType, Organo, CaricaSociale, Incarico, Elezione, Candidatura, Voto, Incasso, Receipt, ExpenseRefund, RefundItem, PrimaNotaEntry, Property, Asset, Warehouse, WarehouseStock, Item, Location, Event, EventRegistration, Verbale, Document, Template, Attachment, Settings, PaymentMethod, Supplier.
+  Member, MemberType, Organo, CaricaSociale, Incarico, Elezione, Candidatura, Voto, Incasso, Receipt, ExpenseRefund, RefundItem, PrimaNotaEntry, Conto, Property, Asset, Warehouse, WarehouseStock, Item, Location, Event, EventRegistration, Verbale, Document, Template, Attachment, Settings, Supplier.
 
-- **Contabilità**: le voci del rendiconto sono **fisse** (Modello D, GU 18-04-2020), definite in `config/rendiconto_cassa.php` e usate tramite `App\Services\RendicontoCassaSchema`. La prima nota (`PrimaNotaEntry`) ha `rendiconto_code` (nessun piano dei conti né mapping). Codici fissi per prima nota automatica: quota → INC_A_1, donazione → INC_A_4, rimborsi → EXP_A_5.
+- **Contabilità**: le voci del rendiconto sono **fisse** (Modello D, GU 18-04-2020), definite in `config/rendiconto_cassa.php` e usate tramite `App\Services\RendicontoCassaSchema`. La prima nota (`PrimaNotaEntry`) ha `conto_id` (conto tesoreria) e `rendiconto_code` (nessun piano dei conti né mapping). Gli **incassi** hanno **conto di destinazione** (`conto_id`) obbligatorio: l’utente sceglie il conto su cui registrare l’entrata e il movimento in prima nota usa quel conto. Codici fissi per prima nota automatica: quota → INC_A_1, donazione → INC_A_4, rimborsi → EXP_A_5.
 
 - **Relazioni chiave**:  
   - Organo → caricheSociali → incarichi → member  
   - Member → incassi, expenseRefunds, candidature, voti, registrazioni eventi  
+  - **Conto** (tesoreria) → `movimenti()` (PrimaNotaEntry), `incassi()` (Incasso). Un conto si può eliminare solo se non ha movimenti né incassi collegati (`ContoController::destroy`). Route resource `conti`: parametro `{conti}` → nel controller usare `Conto $conti` per il model binding.  
   - Incassi e ricevute collegati a prima nota (rendiconto_code). **ExpenseRefund** → `primaNotaEntries()` (morphMany): le voci sono create all’approvazione, una per ogni RefundItem; descrizione movimento = descrizione riga + « – Rimborso spese #id ».  
   - Attachment polimorfico (Settings logo, documenti, ecc.)
 
@@ -136,9 +137,9 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
 - **Seeders**:  
   - `RoleSeeder` – ruoli: admin, contabile, segreteria, socio  
-  - `MemberTypeSeeder`, `PaymentMethodSeeder`  
+  - `MemberTypeSeeder`  
   - `DatabaseSeeder` – chiama i seeders sopra, imposta valori default in Settings e crea utente di test con ruolo admin.  
-  - `InstallSeeder` – usato dall’installer web: ruoli, tipi socio, metodi pagamento, Settings e un solo utente admin (dati da config).
+  - `InstallSeeder` – usato dall’installer web: ruoli, tipi socio, conto Cassa contanti, Settings e un solo utente admin (dati da config).
 
 - **Installazione iniziale**: route `/install` (solo se `APP_KEY` vuoto); wizard per configurazione DB (MySQL o SQLite) e creazione utente amministratore; controller `InstallController`, viste in `resources/views/install/`, middleware `EnsureNotInstalled`.
 
@@ -158,6 +159,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 | **Messaggi flash** | Backend: `with('flash', ['type' => 'success'|'error'|'info', 'message' => '...'])`. Frontend: componente `FlashToast` e `page.props.flash`. |
 | **Ruoli e permessi** | Middleware `app/Http/Middleware/EnsureUserHasRole.php`, registrazione in `bootstrap/app.php`, seed in `database/seeders/RoleSeeder.php`. |
 | **Gestione utenti (creazione, ruoli, socio)** | `App\Http\Controllers\UserController` (solo admin), route `users.index`, `users.store`, `users.roles.update`, `users.member.update`, `users.send-password-reset`, `users.destroy`; pagina `resources/js/Pages/Users/Index.vue` (modali: Crea utente, Modifica ruoli, Collega socio). |
+| **Incassi / conto di destinazione** | `App\Http\Controllers\IncassoController`, modello `Incasso` (conto_id), pagine `resources/js/Pages/Incassi/` (Create, Index, Show). Conti tesoreria: `App\Http\Controllers\ContoController`, `resources/js/Pages/Conti/`. |
 
 ---
 

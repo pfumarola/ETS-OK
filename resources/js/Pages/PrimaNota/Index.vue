@@ -20,11 +20,16 @@ const search = () => router.get(route('prima-nota.index'), form);
     <AppLayout title="Prima nota">
         <Head title="Prima nota" />
         <template #header>
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center flex-wrap gap-2">
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Prima nota</h2>
-                <Link :href="route('prima-nota.create')">
-                    <PrimaryButton><PlusIcon class="size-4 me-2" aria-hidden="true" />Nuovo movimento</PrimaryButton>
-                </Link>
+                <div class="flex gap-2">
+                    <Link :href="route('prima-nota.giroconto.create')">
+                        <PrimaryButton type="button" class="!bg-gray-600 hover:!bg-gray-700">Giroconto</PrimaryButton>
+                    </Link>
+                    <Link :href="route('prima-nota.create')">
+                        <PrimaryButton><PlusIcon class="size-4 me-2" aria-hidden="true" />Nuovo movimento</PrimaryButton>
+                    </Link>
+                </div>
             </div>
         </template>
 
@@ -54,6 +59,7 @@ const search = () => router.get(route('prima-nota.index'), form);
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Conto</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Voce</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Descrizione</th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Importo</th>
@@ -63,6 +69,7 @@ const search = () => router.get(route('prima-nota.index'), form);
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="e in entries.data" :key="e.id">
                                 <td class="px-4 py-2">{{ e.date ? new Date(e.date).toLocaleDateString('it-IT') : '' }}</td>
+                                <td class="px-4 py-2">{{ e.conto?.name ?? '—' }}</td>
                                 <td class="px-4 py-2">{{ e.rendiconto_label || (e.rendiconto_code ?? '') }}</td>
                                 <td class="px-4 py-2">{{ e.description || '—' }}</td>
                                 <td class="px-4 py-2 text-right" :class="Number(e.amount) >= 0 ? 'text-green-600' : 'text-red-600'">€ {{ Number(e.amount).toFixed(2) }}</td>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Conto;
 use App\Models\PrimaNotaEntry;
 use App\Services\RendicontoCassaSchema;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class PrimaNotaController extends Controller
             $query->where('rendiconto_code', $request->rendiconto_code);
         }
 
-        $entries = $query->orderByDesc('date')->orderByDesc('id')->paginate(30)->withQueryString();
+        $entries = $query->with('conto')->orderByDesc('date')->orderByDesc('id')->paginate(30)->withQueryString();
         $rendicontoVoci = RendicontoCassaSchema::getSelectableVoices();
         $macroAreas = RendicontoCassaSchema::getMacroAreasForSelect();
 
@@ -45,9 +46,15 @@ class PrimaNotaController extends Controller
 
     public function create()
     {
+        $conti = Conto::attivi()->ordered()->get(['id', 'name', 'code', 'type']);
+        if ($conti->isEmpty()) {
+            return redirect()->route('prima-nota.index')
+                ->with('flash', ['type' => 'error', 'message' => 'Crea almeno un conto tesoreria prima di registrare movimenti.']);
+        }
         return Inertia::render('PrimaNota/Create', [
             'rendicontoVoci' => RendicontoCassaSchema::getSelectableVoices(),
             'macroAreas' => RendicontoCassaSchema::getMacroAreasForSelect(),
+            'conti' => $conti,
         ]);
     }
 
@@ -55,6 +62,7 @@ class PrimaNotaController extends Controller
     {
         $validCodes = RendicontoCassaSchema::getValidCodes();
         $request->validate([
+            'conto_id' => 'required|exists:conti,id',
             'rendiconto_code' => 'required|string|in:' . implode(',', $validCodes),
             'date' => 'required|date',
             'amount' => 'required|numeric',
@@ -78,7 +86,7 @@ class PrimaNotaController extends Controller
             }
         }
 
-        PrimaNotaEntry::create($request->only('rendiconto_code', 'date', 'amount', 'description', 'gestione') + [
+        PrimaNotaEntry::create($request->only('conto_id', 'rendiconto_code', 'date', 'amount', 'description', 'gestione') + [
             'competenza_cassa' => $request->boolean('competenza_cassa', true),
         ]);
 
@@ -87,10 +95,12 @@ class PrimaNotaController extends Controller
 
     public function edit(PrimaNotaEntry $prima_nota_entry)
     {
+        $conti = Conto::attivi()->ordered()->get(['id', 'name', 'code', 'type']);
         return Inertia::render('PrimaNota/Edit', [
             'entry' => $prima_nota_entry,
             'rendicontoVoci' => RendicontoCassaSchema::getSelectableVoices(),
             'macroAreas' => RendicontoCassaSchema::getMacroAreasForSelect(),
+            'conti' => $conti,
         ]);
     }
 
@@ -98,6 +108,7 @@ class PrimaNotaController extends Controller
     {
         $validCodes = RendicontoCassaSchema::getValidCodes();
         $request->validate([
+            'conto_id' => 'required|exists:conti,id',
             'rendiconto_code' => 'required|string|in:' . implode(',', $validCodes),
             'date' => 'required|date',
             'amount' => 'required|numeric',
@@ -121,10 +132,68 @@ class PrimaNotaController extends Controller
             }
         }
 
-        $prima_nota_entry->update($request->only('rendiconto_code', 'date', 'amount', 'description', 'gestione') + [
+        $prima_nota_entry->update($request->only('conto_id', 'rendiconto_code', 'date', 'amount', 'description', 'gestione') + [
             'competenza_cassa' => $request->boolean('competenza_cassa', true),
         ]);
 
         return redirect()->route('prima-nota.index')->with('flash', ['type' => 'success', 'message' => 'Movimento aggiornato.']);
+    }
+
+    public function createGiroconto()
+    {
+        $conti = Conto::attivi()->ordered()->get(['id', 'name', 'code', 'type']);
+        if ($conti->count() < 2) {
+            return redirect()->route('prima-nota.index')
+                ->with('flash', ['type' => 'error', 'message' => 'Servono almeno due conti attivi per eseguire un giroconto.']);
+        }
+        return Inertia::render('PrimaNota/Giroconto', ['conti' => $conti]);
+    }
+
+    public function storeGiroconto(Request $request)
+    {
+        $conti = Conto::attivi()->ordered()->get(['id', 'name']);
+        $validIds = $conti->pluck('id')->toArray();
+        $request->validate([
+            'conto_da_id' => 'required|in:' . implode(',', $validIds),
+            'conto_a_id' => 'required|in:' . implode(',', $validIds),
+            'date' => 'required|date',
+            'importo' => 'required|numeric|min:0.01',
+            'description' => 'nullable|string|max:255',
+        ]);
+        $contoDaId = (int) $request->conto_da_id;
+        $contoAId = (int) $request->conto_a_id;
+        if ($contoDaId === $contoAId) {
+            return redirect()->back()->withInput()->withErrors([
+                'conto_a_id' => 'Il conto di destinazione deve essere diverso dal conto di partenza.',
+            ]);
+        }
+        $contoDa = $conti->firstWhere('id', $contoDaId);
+        $contoA = $conti->firstWhere('id', $contoAId);
+        $importo = (float) $request->importo;
+        $data = $request->date;
+        $desc = $request->filled('description')
+            ? $request->description
+            : 'Giroconto da ' . $contoDa->name . ' verso ' . $contoA->name;
+
+        PrimaNotaEntry::create([
+            'conto_id' => $contoDaId,
+            'rendiconto_code' => 'EXP_D_1',
+            'date' => $data,
+            'amount' => -$importo,
+            'description' => $desc,
+            'gestione' => 'istituzionale',
+            'competenza_cassa' => true,
+        ]);
+        PrimaNotaEntry::create([
+            'conto_id' => $contoAId,
+            'rendiconto_code' => 'INC_D_1',
+            'date' => $data,
+            'amount' => $importo,
+            'description' => $desc,
+            'gestione' => 'istituzionale',
+            'competenza_cassa' => true,
+        ]);
+
+        return redirect()->route('prima-nota.index')->with('flash', ['type' => 'success', 'message' => 'Giroconto registrato.']);
     }
 }

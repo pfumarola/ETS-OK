@@ -61,7 +61,7 @@ function sectionForRoute(name) {
     if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.')) return 'documenti';
     if (name.startsWith('organi.') || name.startsWith('elezioni.')) return 'organiVotazioni';
     if (name.startsWith('events.') || name.startsWith('properties.') || name.startsWith('items.') || name.startsWith('locations.') || name.startsWith('warehouses.')) return 'patrimonio';
-    if (name.startsWith('prima-nota.') || name === 'reports.accounting' || name === 'reports.rendiconto-cassa') return 'contabilita';
+    if (name.startsWith('conti.') || name.startsWith('prima-nota.') || name === 'reports.accounting' || name === 'reports.rendiconto-cassa') return 'contabilita';
     if (name.startsWith('teams.')) return 'team';
     if (name === 'profile.show' || name.startsWith('api-tokens.')) return 'utente';
     return null;
@@ -331,6 +331,10 @@ const logout = () => {
                                 <ChevronRightIcon v-else class="size-4 shrink-0" aria-hidden="true" />
                             </button>
                             <div v-show="openSections.contabilita" class="space-y-0.5 ps-6">
+                                <ResponsiveNavLink :href="route('conti.index')" :active="route().current('conti.*')">
+                                    <BanknotesIcon class="size-4 shrink-0" aria-hidden="true" />
+                                    Conti tesoreria
+                                </ResponsiveNavLink>
                                 <ResponsiveNavLink :href="route('prima-nota.index')" :active="route().current('prima-nota.*')">
                                     <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
                                     Prima nota
@@ -506,6 +510,10 @@ const logout = () => {
                                         <ChevronRightIcon v-else class="size-4 shrink-0" aria-hidden="true" />
                                     </button>
                                     <div v-show="openSections.contabilita" class="space-y-0.5 pl-4 ml-1 border-l border-gray-200 dark:border-gray-600">
+                                        <NavLink :href="route('conti.index')" :active="route().current('conti.*')">
+                                            <BanknotesIcon class="size-4 shrink-0" aria-hidden="true" />
+                                            Conti tesoreria
+                                        </NavLink>
                                         <NavLink :href="route('prima-nota.index')" :active="route().current('prima-nota.*')">
                                             <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
                                             Prima nota

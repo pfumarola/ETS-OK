@@ -64,7 +64,7 @@ const search = () => router.get(route('incassi.index'), form);
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Socio / Donatore</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Importo</th>
-                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Metodo</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Conto di destinazione</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ricevuta</th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Azioni</th>
                             </tr>
@@ -79,7 +79,7 @@ const search = () => router.get(route('incassi.index'), form);
                                 </td>
                                 <td class="px-4 py-2">{{ i.member ? i.member.cognome + ' ' + i.member.nome : (i.donor_name || (i.type === 'donazione' ? 'Anonimo' : '—')) }}</td>
                                 <td class="px-4 py-2">€ {{ Number(i.amount).toFixed(2) }}</td>
-                                <td class="px-4 py-2">{{ i.payment_method?.name ?? '—' }}</td>
+                                <td class="px-4 py-2">{{ i.conto?.name ?? '—' }}</td>
                                 <td class="px-4 py-2">{{ i.receipt ? i.receipt.number : '—' }}</td>
                                 <td class="px-4 py-2 text-right">
                                     <Link :href="route('incassi.show', i.id)" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"><EyeIcon class="size-4" aria-hidden="true" />Dettaglio</Link>

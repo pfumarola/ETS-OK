@@ -2,13 +2,14 @@
 
 namespace Database\Seeders;
 
+use App\Models\Conto;
 use App\Models\Role;
 use App\Models\Settings;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeder usato dall'installer web: ruoli, tipi socio, metodi di pagamento,
+ * Seeder usato dall'installer web: ruoli, tipi socio, conto Cassa contanti,
  * impostazioni default e un solo utente admin con i dati passati da config.
  */
 class InstallSeeder extends Seeder
@@ -18,7 +19,6 @@ class InstallSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             MemberTypeSeeder::class,
-            PaymentMethodSeeder::class,
         ]);
 
         Settings::set('quota_annuale', 50);
@@ -29,6 +29,11 @@ class InstallSeeder extends Seeder
         Settings::set('causale_default_donazione', 'Erogazione liberale');
         Settings::set('causale_default_quota', 'Quota associativa');
         Settings::set('causale_default_rimborso', 'Rimborso spese');
+
+        Conto::firstOrCreate(
+            ['code' => 'Cassa'],
+            ['name' => 'Cassa contanti', 'type' => 'cassa', 'ordine' => 0, 'attivo' => true]
+        );
 
         $admin = config('install.admin');
         if (empty($admin['email'])) {

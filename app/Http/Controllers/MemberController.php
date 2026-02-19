@@ -109,7 +109,7 @@ class MemberController extends Controller
         $member->load([
             'memberType',
             'user.roles',
-            'incassi.paymentMethod',
+            'incassi.conto',
             'incarichi.caricaSociale.organo',
         ]);
         $member->in_regola_con_quota = $member->isInRegolaConQuota();
@@ -248,7 +248,7 @@ class MemberController extends Controller
      */
     private function memberShowWithAccessSuccess(Member $member, string $message): \Symfony\Component\HttpFoundation\Response
     {
-        $member->load(['memberType', 'user.roles', 'incassi.paymentMethod', 'incarichi.caricaSociale.organo']);
+        $member->load(['memberType', 'user.roles', 'incassi.conto', 'incarichi.caricaSociale.organo']);
         $member->in_regola_con_quota = $member->isInRegolaConQuota();
         $caricheSociali = \App\Models\CaricaSociale::with('organo')->orderBy('ordine')->orderBy('nome')->get(['id', 'organo_id', 'nome', 'ordine']);
         $roles = Role::orderBy('name')->get(['id', 'name', 'display_name']);
@@ -266,7 +266,7 @@ class MemberController extends Controller
      */
     private function memberShowWithAccessError(Member $member, string $message): \Symfony\Component\HttpFoundation\Response
     {
-        $member->load(['memberType', 'user.roles', 'incassi.paymentMethod', 'incarichi.caricaSociale.organo']);
+        $member->load(['memberType', 'user.roles', 'incassi.conto', 'incarichi.caricaSociale.organo']);
         $member->in_regola_con_quota = $member->isInRegolaConQuota();
         $caricheSociali = \App\Models\CaricaSociale::with('organo')->orderBy('ordine')->orderBy('nome')->get(['id', 'organo_id', 'nome', 'ordine']);
         $roles = Role::orderBy('name')->get(['id', 'name', 'display_name']);

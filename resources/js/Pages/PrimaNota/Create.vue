@@ -9,11 +9,12 @@ import HelpTooltip from '@/Components/HelpTooltip.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
-const props = defineProps({ rendicontoVoci: Array, macroAreas: Array });
+const props = defineProps({ rendicontoVoci: Array, macroAreas: Array, conti: Array });
 
 const selectedMacroCode = ref('');
 
 const form = useForm({
+    conto_id: '',
     rendiconto_code: '',
     date: new Date().toISOString().slice(0, 10),
     amount: '',
@@ -65,7 +66,7 @@ const isAmountSignValid = computed(() => {
 });
 
 const canSubmit = computed(() => {
-    return form.rendiconto_code && form.date && form.amount !== '' && isAmountSignValid.value;
+    return form.conto_id && form.rendiconto_code && form.date && form.amount !== '' && isAmountSignValid.value;
 });
 
 /** Messaggio visibile quando voce e importo sono compilati ma il segno non è coerente (spiega perché Salva è disabilitato). */
@@ -110,6 +111,19 @@ function handleSubmit() {
 
         <div class="py-6 max-w-2xl mx-auto sm:px-6">
             <form @submit.prevent="handleSubmit" class="space-y-4 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <div>
+                    <InputLabel for="conto_id" value="Conto *" />
+                    <select
+                        id="conto_id"
+                        v-model="form.conto_id"
+                        required
+                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                    >
+                        <option value="">Seleziona conto</option>
+                        <option v-for="c in conti" :key="c.id" :value="c.id">{{ c.name }}{{ c.code ? ' (' + c.code + ')' : '' }}</option>
+                    </select>
+                    <InputError class="mt-1" :message="form.errors.conto_id" />
+                </div>
                 <div>
                     <InputLabel for="macro_area" value="Sezione / Area *" />
                     <select

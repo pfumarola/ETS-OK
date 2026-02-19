@@ -18,6 +18,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\MemberInviteController;
 use App\Http\Controllers\MemberTypeController;
+use App\Http\Controllers\ContoController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\PublicDownloadController;
 use App\Http\Controllers\PublicSiteController;
@@ -147,9 +148,12 @@ Route::middleware([
     Route::get('expense-refunds/{expense_refund}/print', [ExpenseRefundController::class, 'print'])->name('expense-refunds.print');
 
     // Contabilità
+    Route::resource('conti', ContoController::class)->except(['show']);
     Route::get('prima-nota', [PrimaNotaController::class, 'index'])->name('prima-nota.index');
     Route::get('prima-nota/create', [PrimaNotaController::class, 'create'])->name('prima-nota.create');
     Route::post('prima-nota', [PrimaNotaController::class, 'store'])->name('prima-nota.store');
+    Route::get('prima-nota/giroconto', [PrimaNotaController::class, 'createGiroconto'])->name('prima-nota.giroconto.create');
+    Route::post('prima-nota/giroconto', [PrimaNotaController::class, 'storeGiroconto'])->name('prima-nota.giroconto.store');
     Route::get('prima-nota/{prima_nota_entry}/edit', [PrimaNotaController::class, 'edit'])->name('prima-nota.edit');
     Route::put('prima-nota/{prima_nota_entry}', [PrimaNotaController::class, 'update'])->name('prima-nota.update');
     Route::get('reports/accounting', [AccountingReportController::class, 'index'])->name('reports.accounting');

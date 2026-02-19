@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Conto;
 use App\Models\Incasso;
 use App\Models\Member;
-use App\Models\PaymentMethod;
 use App\Models\PrimaNotaEntry;
 use App\Models\Settings;
 use App\Models\Subscription;
@@ -25,7 +25,7 @@ class IncassoController extends Controller
 
     public function index(Request $request)
     {
-        $query = Incasso::with(['member', 'subscription', 'paymentMethod', 'receipt']);
+        $query = Incasso::with(['member', 'subscription', 'conto', 'receipt']);
 
         if ($request->filled('member_id')) {
             $query->where('member_id', $request->member_id);
@@ -73,9 +73,16 @@ class IncassoController extends Controller
         if ($preselectedDescription === null && $preselectedType === 'quota') {
             $preselectedDescription = $causaleDefaultQuota;
         }
+        $conti = Conto::attivi()->ordered()->get(['id', 'name', 'code']);
+        if ($conti->isEmpty()) {
+            return redirect()->route('incassi.index')->with('flash', [
+                'type' => 'warning',
+                'message' => 'Nessun conto tesoreria attivo. Creare almeno un conto prima di registrare incassi.',
+            ]);
+        }
         return Inertia::render('Incassi/Create', [
             'members' => Member::with('subscriptions')->orderBy('cognome')->orderBy('nome')->get(['id', 'nome', 'cognome']),
-            'paymentMethods' => PaymentMethod::orderBy('name')->get(),
+            'conti' => $conti,
             'preselectedType' => $preselectedType,
             'preselectedMember' => $member,
             'preselectedSubscriptionId' => $preselectedSubscriptionId,
@@ -94,7 +101,7 @@ class IncassoController extends Controller
             'subscription_id' => 'nullable|exists:subscriptions,id',
             'amount' => 'required|numeric|min:0.01',
             'paid_at' => 'required|date',
-            'payment_method_id' => 'nullable|exists:payment_methods,id',
+            'conto_id' => 'required|exists:conti,id',
             'description' => 'nullable|string|max:255',
             'issue_receipt' => 'boolean',
             'genera_prima_nota' => 'boolean',
@@ -116,7 +123,7 @@ class IncassoController extends Controller
             'subscription_id' => $subscriptionId,
             'amount' => $request->amount,
             'paid_at' => $request->paid_at,
-            'payment_method_id' => $request->payment_method_id,
+            'conto_id' => $request->conto_id,
             'description' => $request->description,
             'genera_prima_nota' => $request->boolean('genera_prima_nota', true),
             'type' => $request->type,
@@ -134,6 +141,7 @@ class IncassoController extends Controller
                 $desc = $desc ?: ($member ? 'Quota ' . trim($member->cognome . ' ' . $member->nome) : 'Quota associativa');
             }
             PrimaNotaEntry::create([
+                'conto_id' => $incasso->conto_id,
                 'rendiconto_code' => $rendicontoCode,
                 'entryable_type' => Incasso::class,
                 'entryable_id' => $incasso->id,
@@ -157,7 +165,7 @@ class IncassoController extends Controller
 
     public function show(Incasso $incasso)
     {
-        $incasso->load(['member', 'subscription', 'paymentMethod', 'receipt', 'primaNotaEntry']);
+        $incasso->load(['member', 'subscription', 'conto', 'receipt', 'primaNotaEntry']);
         return Inertia::render('Incassi/Show', ['incasso' => $incasso]);
     }
 }

@@ -11,7 +11,7 @@ import TextInput from '@/Components/TextInput.vue';
 
 const props = defineProps({
     members: Array,
-    paymentMethods: Array,
+    conti: Array,
     preselectedType: { type: String, default: 'quota' },
     preselectedMember: Object,
     preselectedSubscriptionId: Number,
@@ -30,7 +30,7 @@ const form = useForm({
     subscription_id: props.preselectedType === 'donazione' ? '' : (props.preselectedSubscriptionId ?? ''),
     amount: props.preselectedAmount ?? (props.preselectedType === 'quota' && props.quota_annuale != null ? String(Number(props.quota_annuale).toFixed(2)) : ''),
     paid_at: new Date().toISOString().slice(0, 10),
-    payment_method_id: '',
+    conto_id: props.conti?.length ? props.conti[0].id : '',
     description: props.preselectedType === 'donazione' ? (props.causale_default_donazione ?? 'Erogazione liberale') : (props.preselectedDescription ?? props.causale_default_quota ?? ''),
     issue_receipt: true,
     genera_prima_nota: true,
@@ -143,11 +143,11 @@ function onSubmit() {
                     </div>
                 </div>
                 <div>
-                    <InputLabel for="payment_method_id" value="Metodo di pagamento" />
-                    <select id="payment_method_id" v-model="form.payment_method_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
-                        <option value="">—</option>
-                        <option v-for="pm in paymentMethods" :key="pm.id" :value="pm.id">{{ pm.name }}</option>
+                    <InputLabel for="conto_id" value="Conto di destinazione *" />
+                    <select id="conto_id" v-model="form.conto_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm" required>
+                        <option v-for="c in conti" :key="c.id" :value="c.id">{{ c.name }}{{ c.code ? ' (' + c.code + ')' : '' }}</option>
                     </select>
+                    <InputError class="mt-1" :message="form.errors.conto_id" />
                 </div>
                 <div>
                     <InputLabel for="description" value="Causale / Descrizione" />

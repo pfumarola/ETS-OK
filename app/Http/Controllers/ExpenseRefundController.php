@@ -304,7 +304,12 @@ class ExpenseRefundController extends Controller
                 ? trim($item->description) . ' – ' . $ref
                 : $ref;
 
+            $contoId = \App\Models\Conto::attivi()->ordered()->value('id');
+            if (! $contoId) {
+                throw new \RuntimeException('Nessun conto tesoreria attivo. Creare almeno un conto prima di contabilizzare.');
+            }
             PrimaNotaEntry::create([
+                'conto_id' => $contoId,
                 'rendiconto_code' => RendicontoCassaSchema::CODE_RIMBORSI,
                 'entryable_type' => ExpenseRefund::class,
                 'entryable_id' => $expenseRefund->id,

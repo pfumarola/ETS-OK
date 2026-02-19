@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\RendicontoCassaSchema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
@@ -15,6 +16,7 @@ class PrimaNotaEntry extends Model
     protected $table = 'prima_nota_entries';
 
     protected $fillable = [
+        'conto_id',
         'rendiconto_code',
         'entryable_type',
         'entryable_id',
@@ -34,6 +36,11 @@ class PrimaNotaEntry extends Model
             'amount' => 'decimal:2',
             'competenza_cassa' => 'boolean',
         ];
+    }
+
+    public function conto(): BelongsTo
+    {
+        return $this->belongsTo(Conto::class);
     }
 
     public function entryable(): MorphTo
