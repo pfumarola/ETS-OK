@@ -18,6 +18,10 @@ const props = defineProps({
     pec_associazione: String,
     codice_fiscale_associazione: String,
     partita_iva_associazione: String,
+    legale_rappresentante_associazione: String,
+    data_iscrizione_runts: String,
+    ets_è_odv: Boolean,
+    luogo_emissione_ricevute: String,
     causale_default_donazione: String,
     causale_default_quota: String,
     causale_default_rimborso: String,
@@ -99,6 +103,10 @@ const form = useForm({
     pec_associazione: props.pec_associazione ?? '',
     codice_fiscale_associazione: props.codice_fiscale_associazione ?? '',
     partita_iva_associazione: props.partita_iva_associazione ?? '',
+    legale_rappresentante_associazione: props.legale_rappresentante_associazione ?? '',
+    data_iscrizione_runts: props.data_iscrizione_runts ?? '',
+    ets_è_odv: props.ets_è_odv ?? false,
+    luogo_emissione_ricevute: props.luogo_emissione_ricevute ?? '',
     causale_default_donazione: props.causale_default_donazione ?? '',
     causale_default_quota: props.causale_default_quota ?? '',
     causale_default_rimborso: props.causale_default_rimborso ?? '',
@@ -254,6 +262,35 @@ const placeholderSottotitolo = 'Es: Benvenuti nel sito di \u007B\u007Bnome_assoc
                             <InputLabel for="partita_iva_associazione" value="Partita IVA" />
                             <TextInput id="partita_iva_associazione" v-model="form.partita_iva_associazione" type="text" class="mt-1 block w-full" />
                             <InputError class="mt-1" :message="form.errors.partita_iva_associazione" />
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600 mt-4">Campi per la ricevuta donazione (RICEVUTA DONAZIONE con diciture ETS).</p>
+                        <div>
+                            <InputLabel for="legale_rappresentante_associazione" value="Legale rappresentante" />
+                            <TextInput id="legale_rappresentante_associazione" v-model="form.legale_rappresentante_associazione" type="text" class="mt-1 block w-full" placeholder="Nome e cognome" />
+                            <InputError class="mt-1" :message="form.errors.legale_rappresentante_associazione" />
+                        </div>
+                        <div>
+                            <InputLabel for="data_iscrizione_runts" value="Data iscrizione RUNTS" />
+                            <input
+                                id="data_iscrizione_runts"
+                                v-model="form.data_iscrizione_runts"
+                                type="date"
+                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                            />
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Data di iscrizione al Registro Unico Nazionale del Terzo Settore.</p>
+                            <InputError class="mt-1" :message="form.errors.data_iscrizione_runts" />
+                        </div>
+                        <div>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input v-model="form.ets_è_odv" type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700" />
+                                <span class="text-sm text-gray-700 dark:text-gray-300">L'ente è ODV (Organizzazione di Volontariato)</span>
+                            </label>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Se attivo, nella ricevuta donazione viene indicata la detrazione del 35% invece del 30%.</p>
+                        </div>
+                        <div>
+                            <InputLabel for="luogo_emissione_ricevute" value="Luogo di emissione ricevute" />
+                            <TextInput id="luogo_emissione_ricevute" v-model="form.luogo_emissione_ricevute" type="text" class="mt-1 block w-full" placeholder="Es: Roma (se vuoto si usa l'indirizzo sede)" />
+                            <InputError class="mt-1" :message="form.errors.luogo_emissione_ricevute" />
                         </div>
                         <div class="pt-2">
                             <a :href="route('settings.letterhead-preview')" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">

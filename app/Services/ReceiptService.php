@@ -49,7 +49,8 @@ class ReceiptService
             'type' => 'liberale',
         ]);
 
-        $path = $this->savePdf($receipt, $member, $recipientName, $incasso->amount, $causale, $issuedAt);
+        $isDonazione = $incasso->type === Incasso::TYPE_DONAZIONE;
+        $path = $this->savePdf($receipt, $member, $recipientName, $incasso->amount, $causale, $issuedAt, $isDonazione);
         $receipt->update(['file_path' => $path]);
         $incasso->update(['receipt_issued_at' => $incasso->paid_at]);
 
@@ -79,7 +80,7 @@ class ReceiptService
             'type' => 'rimborso',
         ]);
 
-        $path = $this->savePdf($receipt, $member, null, $refund->total, $causale, $issuedAt);
+        $path = $this->savePdf($receipt, $member, null, $refund->total, $causale, $issuedAt, false);
         $receipt->update(['file_path' => $path]);
         $refund->update(['receipt_id' => $receipt->id, 'status' => 'stampata']);
 
@@ -116,7 +117,8 @@ class ReceiptService
             throw new \InvalidArgumentException('Tipo di ricevuta non supportato per la rigenerazione.');
         }
 
-        $path = $this->savePdf($receipt, $member, $recipientName, $amount, $causale, $issuedAt);
+        $isDonazione = $receivable instanceof Incasso && $receivable->type === Incasso::TYPE_DONAZIONE;
+        $path = $this->savePdf($receipt, $member, $recipientName, $amount, $causale, $issuedAt, $isDonazione);
         $receipt->update(['file_path' => $path]);
 
         return $receipt->fresh();
@@ -136,12 +138,13 @@ class ReceiptService
     /**
      * @param  Member|null  $member  Socio/donatore in anagrafica (null se donatore inserito a mano)
      * @param  string|null  $recipientName  Nome destinatario per ricevuta senza socio (donatore a mano)
+     * @param  bool  $isDonazione  Se true usa il template RICEVUTA DONAZIONE con diciture art. 83 ETS
      */
-    private function savePdf(Receipt $receipt, ?Member $member, ?string $recipientName, $amount, string $causale, string $issuedAt): string
+    private function savePdf(Receipt $receipt, ?Member $member, ?string $recipientName, $amount, string $causale, string $issuedAt, bool $isDonazione = false): string
     {
         $logoDataUri = Attachment::logoDataUriForPdf();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.template', [
+        $viewData = [
             'receipt' => $receipt,
             'member' => $member,
             'recipient_name' => $recipientName,
@@ -155,7 +158,24 @@ class ReceiptService
             'codice_fiscale_associazione' => Settings::get('codice_fiscale_associazione', ''),
             'partita_iva_associazione' => Settings::get('partita_iva_associazione', ''),
             'logo_data_uri' => $logoDataUri,
-        ]);
+        ];
+
+        if ($isDonazione) {
+            $dataRunts = Settings::get('data_iscrizione_runts', '');
+            try {
+                $viewData['data_iscrizione_runts'] = $dataRunts ? \Carbon\Carbon::parse($dataRunts)->format('d/m/Y') : '';
+            } catch (\Throwable $e) {
+                $viewData['data_iscrizione_runts'] = $dataRunts;
+            }
+            $viewData['legale_rappresentante'] = Settings::get('legale_rappresentante_associazione', '');
+            $viewData['ets_è_odv'] = (bool) Settings::get('ets_è_odv', false);
+            $viewData['luogo_emissione'] = Settings::get('luogo_emissione_ricevute', '') ?: Settings::get('indirizzo_associazione', '');
+            $template = 'receipts.template_donazione';
+        } else {
+            $template = 'receipts.template';
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($template, $viewData);
         $year = date('Y', strtotime($issuedAt));
         $dir = "media/receipts/{$year}";
         Storage::disk('local')->makeDirectory($dir);
