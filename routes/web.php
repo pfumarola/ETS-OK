@@ -135,6 +135,8 @@ Route::middleware([
     Route::get('receipts', [ReceiptController::class, 'index'])->name('receipts.index');
     Route::get('receipts/{receipt}', [ReceiptController::class, 'show'])->name('receipts.show');
     Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download'])->name('receipts.download');
+    Route::post('receipts/{receipt}/send-email', [ReceiptController::class, 'sendEmail'])->name('receipts.send-email');
+    Route::post('receipts/{receipt}/regenerate', [ReceiptController::class, 'regenerate'])->name('receipts.regenerate');
 
     // Rimborsi spese (richiesta → approvazione con contabilizzazione automatica)
     Route::post('expense-refunds/{expense_refund}/approva', [ExpenseRefundController::class, 'approva'])->name('expense-refunds.approva')->middleware('role:admin,contabile');
@@ -160,6 +162,7 @@ Route::middleware([
     Route::get('reports/accounting/export', [AccountingReportController::class, 'export'])->name('reports.accounting.export');
     Route::get('reports/rendiconto-cassa', [RendicontoCassaController::class, 'index'])->name('reports.rendiconto-cassa');
     Route::get('reports/rendiconto-cassa/export-pdf', [RendicontoCassaController::class, 'exportPdf'])->name('reports.rendiconto-cassa.export-pdf');
+    Route::post('reports/rendiconto-cassa/export-pdf', [RendicontoCassaController::class, 'exportPdfFromPayload'])->name('reports.rendiconto-cassa.export-pdf.post');
 
     // Immobili e magazzino
     Route::get('properties', [PropertyController::class, 'index'])->name('properties.index');

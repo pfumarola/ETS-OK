@@ -19,8 +19,6 @@
         <div class="receipt-title">RICEVUTA N. {{ $receipt->number }}</div>
     </div>
 
-    <p>Ricevuta liberale / Quota associativa</p>
-
     <table>
         @if($member)
         <tr><th>Destinatario</th><td>{{ $member->cognome }} {{ $member->nome }}</td></tr>
@@ -39,15 +37,6 @@
     </table>
 
     <div class="footer">
-        @if(!empty($indirizzo_associazione))
-            <div>{{ $indirizzo_associazione }}</div>
-        @endif
-        @if(!empty($codice_fiscale_associazione))
-            <div>Codice fiscale: {{ $codice_fiscale_associazione }}</div>
-        @endif
-        @if(!empty($partita_iva_associazione))
-            <div>P.IVA: {{ $partita_iva_associazione }}</div>
-        @endif
         <div style="margin-top: 8px">Documento generato il {{ now()->format('d/m/Y H:i') }}. Valido come ricevuta per erogazione liberale / quota associativa.</div>
     </div>
 </body>

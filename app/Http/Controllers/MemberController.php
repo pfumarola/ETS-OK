@@ -45,7 +45,7 @@ class MemberController extends Controller
             if ($request->in_regola === '1') {
                 $query->inRegolaConQuota();
             } elseif ($request->in_regola === '0') {
-                // Filtro rimosso: gestione subscriptions eliminata
+                $query->nonInRegolaConQuota();
             }
         }
 

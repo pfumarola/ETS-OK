@@ -41,6 +41,21 @@ class RendicontoCassaSchema
     }
 
     /**
+     * Restituisce la macro area con nome uguale a $name (per lookup da payload PDF).
+     * Restituisce: name, area, section, code, children, ecc.
+     */
+    public static function getMacroByName(string $name): ?array
+    {
+        foreach (self::getAccounts() as $macro) {
+            if (($macro['name'] ?? '') === $name) {
+                return $macro;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Struttura per doppio menu: macro aree con children (code, name, ministerial_code, type).
      */
     public static function getMacroAreasForSelect(): array

@@ -130,6 +130,17 @@ class Member extends Model
         });
     }
 
+    /** Scope: soci non in regola con la quota (nessun pagamento quota nell'anno corrente). */
+    public function scopeNonInRegolaConQuota(Builder $query): Builder
+    {
+        $currentYear = now()->year;
+
+        return $query->whereDoesntHave('incassi', function (Builder $q) use ($currentYear) {
+            $q->whereYear('paid_at', $currentYear)
+                ->where('type', 'quota');
+        });
+    }
+
     /** Scope: esclude stati di cessazione (per dashboard/libro soci). */
     public function scopeNonCessati(Builder $query): Builder
     {

@@ -87,6 +87,42 @@ class ReceiptService
     }
 
     /**
+     * Rigenera il PDF della ricevuta mantenendo numero e dati esistenti (utile dopo modifiche al template).
+     */
+    public function regenerate(Receipt $receipt): Receipt
+    {
+        $receipt->load(['member', 'receivable' => fn ($q) => $q->with('subscription')]);
+        $receivable = $receipt->receivable;
+        if (! $receivable) {
+            throw new \InvalidArgumentException('Ricevuta senza incasso o rimborso collegato.');
+        }
+
+        $member = $receipt->member;
+        $recipientName = $receipt->recipient_name;
+        $issuedAt = $receipt->issued_at->format('Y-m-d');
+
+        if ($receivable instanceof Incasso) {
+            $amount = $receivable->amount;
+            if ($receivable->type === Incasso::TYPE_DONAZIONE) {
+                $causale = $receivable->description ?: Settings::get('causale_default_donazione', 'Erogazione liberale');
+            } else {
+                $baseQuota = Settings::get('causale_default_quota', 'Quota associativa');
+                $causale = $receivable->description ?: ($receivable->subscription ? $baseQuota . ' ' . $receivable->subscription->year : $baseQuota);
+            }
+        } elseif ($receivable instanceof ExpenseRefund) {
+            $amount = $receivable->total;
+            $causale = Settings::get('causale_default_rimborso', 'Rimborso spese');
+        } else {
+            throw new \InvalidArgumentException('Tipo di ricevuta non supportato per la rigenerazione.');
+        }
+
+        $path = $this->savePdf($receipt, $member, $recipientName, $amount, $causale, $issuedAt);
+        $receipt->update(['file_path' => $path]);
+
+        return $receipt->fresh();
+    }
+
+    /**
      * Numero progressivo annuale per ricevute (es. 2026/0001).
      */
     private function nextReceiptNumber($date): string

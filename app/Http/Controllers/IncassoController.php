@@ -138,7 +138,10 @@ class IncassoController extends Controller
             if ($incasso->type === Incasso::TYPE_DONAZIONE) {
                 $desc = $desc ?: ($incasso->donor_name ? 'Erogazione liberale - ' . $incasso->donor_name : 'Erogazione liberale');
             } else {
-                $desc = $desc ?: ($member ? 'Quota ' . trim($member->cognome . ' ' . $member->nome) : 'Quota associativa');
+                $baseDesc = $desc ?: 'Quota associativa';
+                $desc = $member
+                    ? $baseDesc . ' – ' . trim($member->cognome . ' ' . $member->nome)
+                    : $baseDesc;
             }
             PrimaNotaEntry::create([
                 'conto_id' => $incasso->conto_id,

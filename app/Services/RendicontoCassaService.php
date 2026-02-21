@@ -54,17 +54,22 @@ class RendicontoCassaService
                 $tipo = $type === 'income' ? 'entrata' : 'uscita';
                 $vociSezione[] = [
                     'codice_voce' => $code,
+                    'ministerial_code' => $child['ministerial_code'] ?? $code,
                     'descrizione' => $child['name'] ?? $code,
                     'tipo' => $tipo,
                     'importo' => round($importo, 2),
                 ];
             }
 
+            $section = $macro['section'] ?? '';
+            $tipoSezione = $section === 'EXPENSES' ? 'uscita' : ($section === 'INCOME' ? 'entrata' : 'misto');
             $sezioni[] = [
                 'sezione' => $macroName,
                 'voci' => $vociSezione,
                 'totale_entrate' => round($totaleEntrateSez, 2),
                 'totale_uscite' => round($totaleUsciteSez, 2),
+                'tipo_sezione' => $tipoSezione,
+                'area' => $macro['area'] ?? null,
             ];
         }
 
