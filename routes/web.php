@@ -125,12 +125,14 @@ Route::middleware([
     Route::get('settings/letterhead-preview', [SettingsController::class, 'letterheadPreview'])->name('settings.letterhead-preview');
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 
-    // Incassi (quote e donazioni), ricevute
-    Route::get('incassi', [IncassoController::class, 'index'])->name('incassi.index');
+    // Quote sociali e erogazioni liberali (pagine distinte); create/show condivisi
+    Route::get('quote-sociali', [IncassoController::class, 'indexQuote'])->name('quote-sociali.index');
+    Route::get('donazioni', [IncassoController::class, 'indexDonazioni'])->name('donazioni.index');
+    Route::get('incassi', [IncassoController::class, 'index'])->name('incassi.index'); // redirect a quote-sociali.index
     Route::get('incassi/create', [IncassoController::class, 'create'])->name('incassi.create');
     Route::post('incassi', [IncassoController::class, 'store'])->name('incassi.store');
     Route::get('incassi/{incasso}', [IncassoController::class, 'show'])->name('incassi.show');
-    Route::get('donations', fn () => redirect()->route('incassi.index', ['type' => 'donazione']))->name('donations.redirect');
+    Route::get('donations', fn () => redirect()->route('donazioni.index'))->name('donations.redirect');
     Route::get('donations/create', fn () => redirect()->route('incassi.create', ['type' => 'donazione']));
     Route::get('receipts', [ReceiptController::class, 'index'])->name('receipts.index');
     Route::get('receipts/{receipt}', [ReceiptController::class, 'show'])->name('receipts.show');

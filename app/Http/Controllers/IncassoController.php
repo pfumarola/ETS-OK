@@ -23,9 +23,21 @@ class IncassoController extends Controller
         $this->middleware('role:admin,segreteria,contabile');
     }
 
+    /**
+     * Redirect per compatibilità: vecchi link incassi → quote sociali.
+     */
     public function index(Request $request)
     {
-        $query = Incasso::with(['member', 'subscription', 'conto', 'receipt']);
+        return redirect()->route('quote-sociali.index', $request->query());
+    }
+
+    /**
+     * Elenco quote sociali (solo type = quota).
+     */
+    public function indexQuote(Request $request)
+    {
+        $query = Incasso::with(['member', 'subscription', 'conto', 'receipt'])
+            ->where('type', Incasso::TYPE_QUOTA);
 
         if ($request->filled('member_id')) {
             $query->where('member_id', $request->member_id);
@@ -36,14 +48,34 @@ class IncassoController extends Controller
         if ($request->filled('to')) {
             $query->whereDate('paid_at', '<=', $request->to);
         }
-        if ($request->filled('type') && $request->type !== 'all') {
-            $query->where('type', $request->type);
+
+        $incassi = $query->orderByDesc('paid_at')->paginate(20)->withQueryString();
+        return Inertia::render('QuoteSociali/Index', [
+            'incassi' => $incassi,
+            'filters' => $request->only('member_id', 'from', 'to'),
+            'members' => Member::orderBy('cognome')->orderBy('nome')->get(['id', 'nome', 'cognome']),
+        ]);
+    }
+
+    /**
+     * Elenco erogazioni liberali (solo type = donazione).
+     */
+    public function indexDonazioni(Request $request)
+    {
+        $query = Incasso::with(['member', 'conto', 'receipt'])
+            ->where('type', Incasso::TYPE_DONAZIONE);
+
+        if ($request->filled('from')) {
+            $query->whereDate('paid_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('paid_at', '<=', $request->to);
         }
 
         $incassi = $query->orderByDesc('paid_at')->paginate(20)->withQueryString();
-        return Inertia::render('Incassi/Index', [
+        return Inertia::render('Donazioni/Index', [
             'incassi' => $incassi,
-            'filters' => $request->only('member_id', 'from', 'to', 'type'),
+            'filters' => $request->only('from', 'to'),
         ]);
     }
 
@@ -75,7 +107,7 @@ class IncassoController extends Controller
         }
         $conti = Conto::attivi()->ordered()->get(['id', 'name', 'code']);
         if ($conti->isEmpty()) {
-            return redirect()->route('incassi.index')->with('flash', [
+            return redirect()->route('quote-sociali.index')->with('flash', [
                 'type' => 'warning',
                 'message' => 'Nessun conto tesoreria attivo. Creare almeno un conto prima di registrare incassi.',
             ]);
@@ -163,7 +195,8 @@ class IncassoController extends Controller
             }
         }
 
-        return redirect()->route('incassi.index')->with('flash', ['type' => 'success', 'message' => 'Incasso registrato.']);
+        $route = $incasso->type === Incasso::TYPE_DONAZIONE ? 'donazioni.index' : 'quote-sociali.index';
+        return redirect()->route($route)->with('flash', ['type' => 'success', 'message' => 'Incasso registrato.']);
     }
 
     public function show(Incasso $incasso)

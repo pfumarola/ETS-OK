@@ -140,7 +140,7 @@ defineProps({
                                     </li>
                                 </ul>
                                 <p v-if="!recent_incassi?.length" class="py-1.5 text-sm text-gray-500 dark:text-gray-400">Nessun incasso recente.</p>
-                                <Link :href="route('incassi.index')" class="mt-2 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Vedi tutti</Link>
+                                <Link :href="route('quote-sociali.index')" class="mt-2 inline-block text-sm text-indigo-600 dark:text-indigo-400 hover:underline">Vedi tutti</Link>
                             </div>
                         </div>
                     </div>

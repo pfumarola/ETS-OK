@@ -57,7 +57,7 @@ const openSections = ref({
 function sectionForRoute(name) {
     if (!name) return null;
     if (name.startsWith('members.') || name.startsWith('libro-soci.') || name.startsWith('member-types.')) return 'soci';
-    if (name.startsWith('incassi.') || name.startsWith('receipts.') || name.startsWith('expense-refunds.')) return 'cassa';
+    if (name.startsWith('incassi.') || name.startsWith('quote-sociali.') || name.startsWith('donazioni.') || name.startsWith('receipts.') || name.startsWith('expense-refunds.')) return 'cassa';
     if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.')) return 'documenti';
     if (name.startsWith('organi.') || name.startsWith('elezioni.')) return 'organiVotazioni';
     if (name.startsWith('events.') || name.startsWith('properties.') || name.startsWith('items.') || name.startsWith('locations.') || name.startsWith('warehouses.')) return 'patrimonio';
@@ -308,9 +308,13 @@ const logout = () => {
                             </button>
                             <div v-show="openSections.cassa" class="space-y-0.5 ps-6">
                                 <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile')">
-                                    <ResponsiveNavLink :href="route('incassi.index')" :active="route().current('incassi.*')">
+                                    <ResponsiveNavLink :href="route('quote-sociali.index')" :active="route().current('quote-sociali.*')">
                                         <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
-                                        Incassi
+                                        Quote sociali
+                                    </ResponsiveNavLink>
+                                    <ResponsiveNavLink :href="route('donazioni.index')" :active="route().current('donazioni.*')">
+                                        <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
+                                        Erogazioni liberali
                                     </ResponsiveNavLink>
                                     <ResponsiveNavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
                                         <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
@@ -486,9 +490,13 @@ const logout = () => {
                                     </button>
                                     <div v-show="openSections.cassa" class="space-y-0.5 pl-4 ml-1 border-l border-gray-200 dark:border-gray-600">
                                         <template v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria') || $page.props.userRoles?.includes('contabile')">
-                                            <NavLink :href="route('incassi.index')" :active="route().current('incassi.*')">
+                                            <NavLink :href="route('quote-sociali.index')" :active="route().current('quote-sociali.*')">
                                                 <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
-                                                Incassi
+                                                Quote sociali
+                                            </NavLink>
+                                            <NavLink :href="route('donazioni.index')" :active="route().current('donazioni.*')">
+                                                <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
+                                                Erogazioni liberali
                                             </NavLink>
                                             <NavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
                                                 <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />

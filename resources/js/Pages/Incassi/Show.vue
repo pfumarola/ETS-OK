@@ -12,7 +12,7 @@ defineProps({ incasso: Object });
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Incasso #{{ incasso.id }}</h2>
-                <Link :href="route('incassi.index')" class="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"><ArrowLeftIcon class="size-4" aria-hidden="true" />Elenco incassi</Link>
+                <Link :href="incasso.type === 'donazione' ? route('donazioni.index') : route('quote-sociali.index')" class="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"><ArrowLeftIcon class="size-4" aria-hidden="true" />{{ incasso.type === 'donazione' ? 'Elenco erogazioni liberali' : 'Elenco quote sociali' }}</Link>
             </div>
         </template>
 
