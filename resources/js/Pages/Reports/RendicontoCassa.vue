@@ -287,14 +287,10 @@ async function generaPdf() {
                         <table class="min-w-full border-collapse border border-gray-200 dark:border-gray-600 text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
-                                    <th colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-2 text-center font-semibold">USCITE</th>
-                                    <th colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-2 text-center font-semibold">ENTRATE</th>
-                                </tr>
-                                <tr>
-                                    <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-left w-[32%]">Voce</th>
+                                    <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-left w-[32%]">Uscite</th>
                                     <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right w-[9%]">Es.t</th>
                                     <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right w-[9%]">Es.t-1</th>
-                                    <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-left w-[32%]">Voce</th>
+                                    <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-left w-[32%]">Entrate</th>
                                     <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right w-[9%]">Es.t</th>
                                     <th class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right w-[9%]">Es.t-1</th>
                                 </tr>
@@ -384,14 +380,10 @@ async function generaPdf() {
                                 <table class="min-w-full border-collapse border border-gray-200 dark:border-gray-600 text-sm">
                                     <thead class="bg-gray-50 dark:bg-gray-700">
                                         <tr>
-                                            <th colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center font-semibold">USCITE</th>
-                                            <th colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center font-semibold">ENTRATE</th>
-                                        </tr>
-                                        <tr>
-                                            <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-left">Voce</th>
+                                            <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-left">Uscite</th>
                                             <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">Es.t (€)</th>
                                             <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">Es.t-1</th>
-                                            <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-left">Voce</th>
+                                            <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-left">Entrate</th>
                                             <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">Es.t (€)</th>
                                             <th class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">Es.t-1</th>
                                         </tr>

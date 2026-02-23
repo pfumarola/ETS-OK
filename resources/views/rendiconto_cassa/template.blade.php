@@ -129,7 +129,7 @@
         ['etichetta' => "Avanzo/disavanzo d'esercizio prima di investimenti e disinvestimenti patrimoniali, e finanziamenti", 'es_t' => $risultatoT, 'es_t1' => $risultatoT1],
         ['etichetta' => 'Avanzo/disavanzo complessivo', 'es_t' => $risultatoT, 'es_t1' => $risultatoT1],
     ];
-    $fmt = function ($n) { return $n !== null && $n !== '' ? number_format((float)$n, 2, ',', '.') : '—'; };
+    $fmt = function ($n) { return $n !== null && $n !== '' ? number_format((float)$n, 2, ',', '.') : ''; };
 @endphp
 <!DOCTYPE html>
 <html lang="it">
@@ -145,7 +145,9 @@
         .tabella-rendiconto th, .tabella-rendiconto td { padding: 5px 6px; border: 1px solid #ddd; }
         .tabella-rendiconto th { background: #f5f5f5; font-weight: bold; text-align: left; }
         .tabella-rendiconto td.num { text-align: right; }
-        .tabella-rendiconto .totale-row { font-weight: bold; background: #f9f9f9; }
+        .tabella-rendiconto tbody tr.row-even { background: #fff; }
+        .tabella-rendiconto tbody tr.row-odd { background: #f5f5f5; }
+        .tabella-rendiconto .totale-row { font-weight: bold; background: #e8e8e8; }
         .risultato { font-size: 14px; font-weight: bold; margin-top: 16px; padding: 10px; border: 1px solid #333; }
         .footer { margin-top: 24px; font-size: 9px; color: #666; }
     </style>
@@ -160,39 +162,39 @@
     <table class="tabella-rendiconto">
         <thead>
             <tr>
-                <th colspan="3" style="text-align: center;">USCITE</th>
-                <th colspan="3" style="text-align: center;">ENTRATE</th>
-            </tr>
-            <tr>
-                <th style="width: 32%;">Voce</th>
+                <th style="width: 32%;">Uscite</th>
                 <th style="width: 9%; text-align: right;">{{ $anno }}</th>
                 <th style="width: 9%; text-align: right;">{{ $annoPrec }}</th>
-                <th style="width: 32%;">Voce</th>
+                <th style="width: 32%;">Entrate</th>
                 <th style="width: 9%; text-align: right;">{{ $anno }}</th>
                 <th style="width: 9%; text-align: right;">{{ $annoPrec }}</th>
             </tr>
         </thead>
         <tbody>
+            @php $rowIndex = 0; @endphp
             @foreach($blocchiAree as $blocco)
-                <tr>
-                    <td><strong>{{ $blocco['titolo_uscite'] ? (in_array($blocco['area'], $areeLettere, true) ? $blocco['area'] . ') ' : '') . $blocco['titolo_uscite'] : '—' }}</strong></td>
+                <tr class="row-{{ $rowIndex % 2 === 0 ? 'even' : 'odd' }}">
+                    @php $rowIndex++; @endphp
+                    <td><strong>{{ $blocco['titolo_uscite'] ? (in_array($blocco['area'], $areeLettere, true) ? $blocco['area'] . ') ' : '') . $blocco['titolo_uscite'] : '' }}</strong></td>
                     <td class="num"></td>
                     <td class="num"></td>
-                    <td><strong>{{ $blocco['titolo_entrate'] ? (in_array($blocco['area'], $areeLettere, true) ? $blocco['area'] . ') ' : '') . $blocco['titolo_entrate'] : '—' }}</strong></td>
+                    <td><strong>{{ $blocco['titolo_entrate'] ? (in_array($blocco['area'], $areeLettere, true) ? $blocco['area'] . ') ' : '') . $blocco['titolo_entrate'] : '' }}</strong></td>
                     <td class="num"></td>
                     <td class="num"></td>
                 </tr>
                 @foreach($blocco['righe'] as $r)
-                <tr>
-                    <td>{{ $r['desc_u'] ?: '—' }}</td>
-                    <td class="num">{{ $r['t_u'] !== null ? $fmt($r['t_u']) : '—' }}</td>
-                    <td class="num">{{ $r['t1_u'] !== null ? $fmt($r['t1_u']) : '—' }}</td>
-                    <td>{{ $r['desc_e'] ?: '—' }}</td>
-                    <td class="num">{{ $r['t_e'] !== null ? $fmt($r['t_e']) : '—' }}</td>
-                    <td class="num">{{ $r['t1_e'] !== null ? $fmt($r['t1_e']) : '—' }}</td>
+                <tr class="row-{{ $rowIndex % 2 === 0 ? 'even' : 'odd' }}">
+                    @php $rowIndex++; @endphp
+                    <td>{{ $r['desc_u'] ?: '' }}</td>
+                    <td class="num">{{ $r['t_u'] !== null ? $fmt($r['t_u']) : '' }}</td>
+                    <td class="num">{{ $r['t1_u'] !== null ? $fmt($r['t1_u']) : '' }}</td>
+                    <td>{{ $r['desc_e'] ?: '' }}</td>
+                    <td class="num">{{ $r['t_e'] !== null ? $fmt($r['t_e']) : '' }}</td>
+                    <td class="num">{{ $r['t1_e'] !== null ? $fmt($r['t1_e']) : '' }}</td>
                 </tr>
                 @endforeach
-                <tr class="totale-row">
+                <tr class="totale-row row-{{ $rowIndex % 2 === 0 ? 'even' : 'odd' }}">
+                    @php $rowIndex++; @endphp
                     <td>Totale</td>
                     <td class="num">{{ $fmt($blocco['tot_u']) }}</td>
                     <td class="num">{{ $fmt($blocco['tot_u1']) }}</td>
@@ -201,17 +203,19 @@
                     <td class="num">{{ $fmt($blocco['tot_e1']) }}</td>
                 </tr>
                 @if($blocco['mostra_avanzo'])
-                <tr>
+                <tr class="row-{{ $rowIndex % 2 === 0 ? 'even' : 'odd' }}">
+                    @php $rowIndex++; @endphp
                     <td></td>
                     <td class="num"></td>
                     <td class="num"></td>
                     <td><strong>Avanzo/disavanzo attività {{ $blocco['area'] === 'A' ? 'di interesse generale' : ($blocco['area'] === 'B' ? 'diverse' : ($blocco['area'] === 'C' ? 'di raccolta fondi' : 'finanziarie e patrimoniali')) }}</strong></td>
-                    <td class="num">{{ $blocco['avanzo_t'] !== null ? $fmt($blocco['avanzo_t']) : '—' }}</td>
-                    <td class="num">{{ $blocco['avanzo_t1'] !== null ? $fmt($blocco['avanzo_t1']) : '—' }}</td>
+                    <td class="num">{{ $blocco['avanzo_t'] !== null ? $fmt($blocco['avanzo_t']) : '' }}</td>
+                    <td class="num">{{ $blocco['avanzo_t1'] !== null ? $fmt($blocco['avanzo_t1']) : '' }}</td>
                 </tr>
                 @endif
             @endforeach
-            <tr class="totale-row">
+            <tr class="totale-row row-{{ $rowIndex % 2 === 0 ? 'even' : 'odd' }}">
+                @php $rowIndex++; @endphp
                 <td></td>
                 <td class="num"></td>
                 <td class="num"></td>
@@ -219,7 +223,8 @@
                 <td class="num">{{ $fmt($totaleEntrateT) }}</td>
                 <td class="num">{{ $fmt($totaleEntrateT1) }}</td>
             </tr>
-            <tr class="totale-row">
+            <tr class="totale-row row-{{ $rowIndex % 2 === 0 ? 'even' : 'odd' }}">
+                @php $rowIndex++; @endphp
                 <td><strong>Totale uscite della gestione</strong></td>
                 <td class="num">{{ $fmt($totaleUsciteT) }}</td>
                 <td class="num">{{ $fmt($totaleUsciteT1) }}</td>
@@ -228,13 +233,14 @@
                 <td class="num"></td>
             </tr>
             @foreach($righeSintesi as $rs)
-            <tr>
+            <tr class="row-{{ $rowIndex % 2 === 0 ? 'even' : 'odd' }}">
+                @php $rowIndex++; @endphp
                 <td></td>
                 <td class="num"></td>
                 <td class="num"></td>
                 <td><strong>{{ $rs['etichetta'] }}</strong></td>
-                <td class="num">{{ $rs['es_t'] !== null ? $fmt($rs['es_t']) : '—' }}</td>
-                <td class="num">{{ $rs['es_t1'] !== null ? $fmt($rs['es_t1']) : '—' }}</td>
+                <td class="num">{{ $rs['es_t'] !== null ? $fmt($rs['es_t']) : '' }}</td>
+                <td class="num">{{ $rs['es_t1'] !== null ? $fmt($rs['es_t1']) : '' }}</td>
             </tr>
             @endforeach
         </tbody>
