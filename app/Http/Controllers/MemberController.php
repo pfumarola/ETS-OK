@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
+use App\Models\EmailTemplate;
 use App\Models\Member;
 use App\Models\MemberType;
 use App\Models\Role;
+use App\Models\Settings;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -287,19 +290,107 @@ class MemberController extends Controller
     }
 
     // --- Parte B: azioni ammissione (solo admin/segreteria) ---
-    public function acceptAdmission(Request $request, Member $member)
+
+    /**
+     * Approva un socio aspirante: update stato/date e opzionalmente invio email notifica.
+     *
+     * @param  bool  $sendEmail  se inviare l'email di notifica approvazione
+     * @return array{email_sent: bool}
+     */
+    private function approveOneMember(Member $member, bool $sendEmail = true): array
     {
-        $this->authorize('update', $member);
-        if ($member->stato !== 'aspirante') {
-            return redirect()->route('members.show', $member)->with('flash', ['type' => 'error', 'message' => 'Solo un aspirante può essere ammesso.']);
-        }
         $member->update([
             'ammissione_esito' => 'accolta',
             'ammissione_decisa_at' => now(),
             'data_iscrizione' => now(),
             'stato' => 'attivo',
         ]);
-        return redirect()->route('members.show', $member)->with('flash', ['type' => 'success', 'message' => 'Domanda accolta. Socio iscritto nel libro soci.']);
+
+        $emailSent = false;
+        if ($sendEmail && ! empty(trim((string) $member->email))) {
+            $quota = (float) Settings::get('quota_annuale', 0);
+            $quotaImporto = number_format($quota, 2, ',', '.');
+            $replacements = [
+                'appName' => Settings::get('nome_associazione', config('app.name')),
+                'member_name' => $member->full_name,
+                'quota_importo' => $quotaImporto,
+            ];
+            $rendered = EmailTemplate::render('notifica_approvazione_socio', $replacements);
+            if ($rendered) {
+                try {
+                    Mail::html($rendered['body'], function ($message) use ($member, $rendered) {
+                        $message->to($member->email)->subject($rendered['subject']);
+                    });
+                    $emailSent = true;
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+        }
+
+        return ['email_sent' => $emailSent];
+    }
+
+    public function acceptAdmission(Request $request, Member $member)
+    {
+        $this->authorize('update', $member);
+        if ($member->stato !== 'aspirante') {
+            return redirect()->route('members.show', $member)->with('flash', ['type' => 'error', 'message' => 'Solo un aspirante può essere ammesso.']);
+        }
+        $sendEmail = $request->boolean('invia_email', true);
+        $result = $this->approveOneMember($member, $sendEmail);
+        $flashMessage = 'Domanda accolta. Socio iscritto nel libro soci.';
+        if ($result['email_sent']) {
+            $flashMessage .= ' È stata inviata un\'email al socio con l\'invito a saldare la quota.';
+        }
+
+        return redirect()->route('members.show', $member)->with('flash', ['type' => 'success', 'message' => $flashMessage]);
+    }
+
+    public function acceptAdmissionBulk(Request $request)
+    {
+        $this->authorize('viewAny', Member::class);
+
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer|exists:members,id',
+        ]);
+
+        $members = Member::whereIn('id', $request->ids)->where('stato', 'aspirante')->get();
+        $approved = 0;
+        $emailsSent = 0;
+
+        $sendEmail = $request->boolean('invia_email', true);
+        foreach ($members as $member) {
+            try {
+                $this->authorize('update', $member);
+            } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+                continue;
+            }
+            $result = $this->approveOneMember($member, $sendEmail);
+            $approved++;
+            if ($result['email_sent']) {
+                $emailsSent++;
+            }
+        }
+
+        if ($approved === 0) {
+            $message = count($request->ids) > 0
+                ? 'Nessuno dei selezionati è un aspirante approvabile.'
+                : 'Nessun socio selezionato.';
+            return redirect()->route('members.index', $request->only('search', 'stato', 'member_type_id', 'in_regola'))
+                ->with('flash', ['type' => 'info', 'message' => $message]);
+        }
+
+        $message = $approved === 1
+            ? '1 domanda accolta.'
+            : "{$approved} domande accolte.";
+        if ($emailsSent > 0) {
+            $message .= $emailsSent === 1 ? ' 1 email inviata.' : " {$emailsSent} email inviate.";
+        }
+
+        return redirect()->route('members.index', $request->only('search', 'stato', 'member_type_id', 'in_regola'))
+            ->with('flash', ['type' => 'success', 'message' => $message]);
     }
 
     public function rejectAdmission(Request $request, Member $member)

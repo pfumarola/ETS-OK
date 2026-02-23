@@ -1,6 +1,6 @@
 <script setup>
-import { PlusIcon, FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon, ClipboardDocumentListIcon, EnvelopeIcon } from '@heroicons/vue/24/outline';
-import { reactive } from 'vue';
+import { PlusIcon, FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon, EnvelopeIcon, CheckCircleIcon } from '@heroicons/vue/24/outline';
+import { reactive, ref, computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -18,6 +18,52 @@ const form = reactive({
     member_type_id: props.filters?.member_type_id ?? '',
     in_regola: props.filters?.in_regola ?? '',
 });
+
+const selectedIds = ref([]);
+const bulkSubmitting = ref(false);
+const bulkInviaEmail = ref(true);
+
+const idsOnPage = computed(() => (props.members?.data ?? []).map((m) => m.id));
+const isAllOnPageSelected = computed(() => idsOnPage.value.length > 0 && idsOnPage.value.every((id) => selectedIds.value.includes(id)));
+const isSomeSelected = computed(() => selectedIds.value.length > 0);
+
+function toggleSelectAll() {
+    if (isAllOnPageSelected.value) {
+        selectedIds.value = selectedIds.value.filter((id) => !idsOnPage.value.includes(id));
+    } else {
+        const add = idsOnPage.value.filter((id) => !selectedIds.value.includes(id));
+        selectedIds.value = [...selectedIds.value, ...add];
+    }
+}
+
+function toggleOne(id) {
+    const i = selectedIds.value.indexOf(id);
+    if (i === -1) {
+        selectedIds.value = [...selectedIds.value, id];
+    } else {
+        selectedIds.value = selectedIds.value.filter((x) => x !== id);
+    }
+}
+
+function bulkApprove() {
+    bulkSubmitting.value = true;
+    router.post(route('members.accept-admission-bulk'), {
+        ids: selectedIds.value,
+        invia_email: bulkInviaEmail.value,
+        search: form.search,
+        stato: form.stato,
+        member_type_id: form.member_type_id,
+        in_regola: form.in_regola,
+    }, {
+        preserveScroll: true,
+        onFinish: () => { bulkSubmitting.value = false; },
+    });
+    selectedIds.value = [];
+}
+
+function clearSelection() {
+    selectedIds.value = [];
+}
 
 const search = () => {
     router.get(route('members.index'), form);
@@ -82,10 +128,34 @@ const search = () => {
                     <PrimaryButton type="submit"><FunnelIcon class="size-4 me-2" aria-hidden="true" />Filtra</PrimaryButton>
                 </form>
 
+                <div v-if="isSomeSelected" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-3">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ selectedIds.length }} soci selezionati</span>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <input type="checkbox" v-model="bulkInviaEmail" class="rounded border-gray-300 dark:border-gray-600" />
+                        Invia email di notifica
+                    </label>
+                    <PrimaryButton type="button" :disabled="bulkSubmitting" @click="bulkApprove">
+                        <CheckCircleIcon class="size-4 me-2" aria-hidden="true" />Approva selezionati
+                    </PrimaryButton>
+                    <button type="button" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline" @click="clearSelection">Annulla selezione</button>
+                </div>
+
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
+                                <th class="px-4 py-2 w-10 text-left">
+                                    <span class="sr-only">Seleziona</span>
+                                    <input
+                                        v-if="idsOnPage.length > 0"
+                                        type="checkbox"
+                                        :checked="isAllOnPageSelected"
+                                        :indeterminate="isSomeSelected && !isAllOnPageSelected"
+                                        class="rounded border-gray-300 dark:border-gray-600"
+                                        aria-label="Seleziona tutti nella pagina"
+                                        @change="toggleSelectAll"
+                                    />
+                                </th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">N. tessera</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Cognome / Nome</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipologia</th>
@@ -97,6 +167,15 @@ const search = () => {
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="m in members.data" :key="m.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <td class="px-4 py-2 w-10">
+                                    <input
+                                        type="checkbox"
+                                        :checked="selectedIds.includes(m.id)"
+                                        class="rounded border-gray-300 dark:border-gray-600"
+                                        :aria-label="'Seleziona ' + m.cognome + ' ' + m.nome"
+                                        @change="toggleOne(m.id)"
+                                    />
+                                </td>
                                 <td class="px-4 py-2 text-sm">{{ m.numero_tessera ?? '—' }}</td>
                                 <td class="px-4 py-2">
                                     <Link :href="route('members.show', m.id)" class="text-indigo-600 dark:text-indigo-400 hover:underline">

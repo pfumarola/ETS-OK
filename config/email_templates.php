@@ -24,5 +24,15 @@ return [
                 'recipient_name' => 'Nome destinatario (opzionale)',
             ],
         ],
+        'notifica_approvazione_socio' => [
+            'label' => 'Notifica approvazione socio',
+            'default_subject' => '[{{appName}}] Domanda di ammissione accolta – benvenuto/a tra i soci',
+            'default_body' => '<p>Buongiorno {{member_name}},</p><p>La tua domanda di ammissione è stata accolta. Sei stato/a iscritto/a come socio presso {{appName}}.</p><p>Ti invitiamo a saldare la quota sociale di <strong>€ {{quota_importo}}</strong> per l\'anno in corso.</p><p>Cordiali saluti,<br>{{appName}}</p>',
+            'placeholders' => [
+                'appName' => 'Nome associazione',
+                'member_name' => 'Nome e cognome del socio',
+                'quota_importo' => 'Importo quota annuale formattato (es. 50,00)',
+            ],
+        ],
     ],
 ];

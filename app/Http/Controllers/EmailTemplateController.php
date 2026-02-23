@@ -109,6 +109,11 @@ class EmailTemplateController extends Controller
                 'receipt_amount' => '50,00',
                 'recipient_name' => 'Mario Rossi',
             ],
+            'notifica_approvazione_socio' => [
+                'appName' => 'Nome Associazione',
+                'member_name' => 'Mario Rossi',
+                'quota_importo' => '50,00',
+            ],
         ];
 
         return $samples[$tipo] ?? [];

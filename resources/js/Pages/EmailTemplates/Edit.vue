@@ -1,6 +1,6 @@
 <script setup>
-import { computed } from 'vue';
-import { CheckIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { computed, ref } from 'vue';
+import { CheckIcon, ArrowLeftIcon, CodeBracketIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
@@ -8,6 +8,8 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import RichTextEditor from '@/Components/RichTextEditor.vue';
+
+const bodyEditMode = ref('editor'); // 'editor' | 'raw'
 
 const props = defineProps({
     template: Object,
@@ -65,8 +67,44 @@ function placeholderLabel(key) {
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
                         <div>
-                            <InputLabel for="body_html" value="Corpo (HTML)" />
-                            <RichTextEditor id="body_html" v-model="form.body_html" placeholder="Contenuto email in HTML..." min-height="280px" />
+                            <div class="flex items-center justify-between gap-2 mb-1">
+                                <InputLabel for="body_html" value="Corpo (HTML)" />
+                                <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
+                                    <button
+                                        type="button"
+                                        :class="[
+                                            'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium',
+                                            bodyEditMode === 'editor'
+                                                ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white'
+                                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                        ]"
+                                        @click="bodyEditMode = 'editor'"
+                                    >
+                                        <PencilSquareIcon class="size-3.5" /> Editor
+                                    </button>
+                                    <button
+                                        type="button"
+                                        :class="[
+                                            'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium',
+                                            bodyEditMode === 'raw'
+                                                ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white'
+                                                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                        ]"
+                                        @click="bodyEditMode = 'raw'"
+                                    >
+                                        <CodeBracketIcon class="size-3.5" /> HTML raw
+                                    </button>
+                                </div>
+                            </div>
+                            <RichTextEditor v-if="bodyEditMode === 'editor'" :key="'body-editor'" id="body_html" v-model="form.body_html" placeholder="Contenuto email in HTML..." min-height="280px" />
+                            <textarea
+                                v-if="bodyEditMode === 'raw'"
+                                id="body_html_raw"
+                                v-model="form.body_html"
+                                class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 font-mono text-sm min-h-[280px]"
+                                placeholder="<p>Contenuto email in HTML...</p>"
+                                spellcheck="false"
+                            />
                             <InputError class="mt-1" :message="form.errors.body_html" />
                         </div>
                         <div v-if="placeholders?.length" class="rounded-md bg-gray-50 dark:bg-gray-900/50 p-4">

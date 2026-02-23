@@ -78,6 +78,7 @@ Route::middleware([
     Route::get('members/invites/create', [MemberInviteController::class, 'create'])->name('members.invites.create')->middleware('role:admin,segreteria');
     Route::post('members/invites', [MemberInviteController::class, 'store'])->name('members.invites.store')->middleware('role:admin,segreteria');
     Route::resource('members', MemberController::class);
+    Route::post('members/accept-admission-bulk', [MemberController::class, 'acceptAdmissionBulk'])->name('members.accept-admission-bulk');
     Route::post('members/{member}/accept-admission', [MemberController::class, 'acceptAdmission'])->name('members.accept-admission');
     Route::post('members/{member}/reject-admission', [MemberController::class, 'rejectAdmission'])->name('members.reject-admission');
     Route::post('members/{member}/communicate-rejection', [MemberController::class, 'communicateRejection'])->name('members.communicate-rejection');

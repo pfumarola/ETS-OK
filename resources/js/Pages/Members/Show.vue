@@ -39,6 +39,10 @@ const submitUserRoles = () => {
 
 const showRejectForm = ref(false);
 const rejectMotivo = ref('');
+const acceptInviaEmail = ref(true);
+const submitAccept = () => {
+    router.post(route('members.accept-admission', props.member.id), { invia_email: acceptInviaEmail.value }, { preserveScroll: true });
+};
 const showAssemblyForm = ref(false);
 const assemblyEsito = ref('accolto');
 const showDeathForm = ref(false);
@@ -230,8 +234,12 @@ const submitEsclusione = () => {
                     <div v-if="member.ricorso_presentato_at"><dt class="text-gray-500 dark:text-gray-400">Ricorso presentato il</dt><dd>{{ new Date(member.ricorso_presentato_at).toLocaleDateString('it-IT') }}</dd></div>
                     <div v-if="member.assemblea_esame_data"><dt class="text-gray-500 dark:text-gray-400">Esame assemblea</dt><dd>{{ new Date(member.assemblea_esame_data).toLocaleDateString('it-IT') }}</dd></div>
                 </dl>
-                <div v-if="canManage && member.stato === 'aspirante'" class="flex flex-wrap gap-2">
-                    <form @submit.prevent="router.post(route('members.accept-admission', member.id))" class="inline">
+                <div v-if="canManage && member.stato === 'aspirante'" class="flex flex-wrap items-center gap-2">
+                    <form @submit.prevent="submitAccept" class="inline-flex flex-wrap items-center gap-2">
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                            <input type="checkbox" v-model="acceptInviaEmail" class="rounded border-gray-300 dark:border-gray-600" />
+                            Invia email di notifica al socio
+                        </label>
                         <PrimaryButton type="submit">Accogli domanda</PrimaryButton>
                     </form>
                     <template v-if="!showRejectForm">

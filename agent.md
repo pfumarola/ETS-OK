@@ -8,7 +8,7 @@ Documentazione per orientarsi rapidamente nella codebase. **ETS OK** è il gesti
 
 Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
-- **Soci e volontari**: anagrafica, tipi socio, stati (domanda, ammissione, cessazione, decesso, morosità, dimissioni, esclusione), libro soci
+- **Soci e volontari**: anagrafica, tipi socio, stati (domanda, ammissione, cessazione, decesso, morosità, dimissioni, esclusione), libro soci; approvazione domande singola (scheda socio) e bulk (lista soci con checkbox), con opzione invio email di notifica approvazione
 - **Cassa**: incassi (quote e donazioni), ricevute, rimborsi spese (approvazione → contabilizzazione automatica: una voce prima nota per riga; descrizione = descrizione riga + riferimento rimborso, es. «Rimborso spese #5»)
 - **Contabilità**: voci del rendiconto (Modello D, schema fisso in config), prima nota, report contabili, rendiconto di cassa (PDF)
 - **Organi e votazioni**: **organi e cariche hardcoded** da `config/organi.php` (slug, nome, cariche); il seeder `OrganiHardcodedSeeder` sincronizza il DB. Identificazione per **slug** (es. `consiglio_direttivo`). Incarichi, elezioni, candidature, voti. Per aggiungere un organo: modificare config e eseguire il seeder.
@@ -127,6 +127,10 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 
 - **Modifica documenti/verbali/template**: in **update** si usa un controllo "stale" (conflitto di modifica): il frontend invia `_updated_at` (quando l’utente ha aperto il form); se in DB il record è stato modificato dopo (`updated_at` più recente), il backend risponde con errore `stale` e redirect; il frontend mostra un modale "Annulla" / "Sovrascrivi"; in caso di "Sovrascrivi" si rinvia la richiesta con `force_overwrite=1`. Controllo in `DocumentController`, `VerbaleController`, `TemplateController` (metodo `update`); modale e `_updated_at` nelle pagine Edit (Documents/Edit.vue, Verbali/Edit.vue, Templates/Edit.vue).
 
+- **Template email**: tipi definiti in `config/email_templates.php` (label, default subject/body, placeholders); modello `EmailTemplate`, `EmailTemplate::render(tipo, replacements)` per soggetto e corpo HTML; seeder `EmailTemplatesSeeder` crea i record dai tipi in config. Pagine **Documenti → Template email** (`EmailTemplates/Index.vue`, `EmailTemplates/Edit.vue`): modifica oggetto e corpo con editor WYSIWYG o **modalità HTML raw** (toggle Editor / HTML raw). Anteprima con valori campione per placeholder. Tipo `notifica_approvazione_socio`: inviato (opzionale) quando un aspirante viene approvato; placeholders `appName`, `member_name`, `quota_importo`. Invio gestito in `MemberController::approveOneMember()` (parametro `$sendEmail`); l’utente sceglie tramite checkbox "Invia email di notifica" in scheda socio (approvazione singola) e in lista soci (approvazione bulk).
+
+- **Ammissione soci (approvazione)**: approvazione singola da scheda socio: `MemberController::acceptAdmission`, route `members.accept-admission`; approvazione bulk da lista soci (`Members/Index.vue`): checkbox su ogni riga, barra "Approva selezionati", route `members.accept-admission-bulk`. Backend carica solo soci con `stato === 'aspirante'` (gli altri id in request vengono ignorati). Logica condivisa in `approveOneMember($member, $sendEmail)` (update stato/date + eventuale invio email). In entrambi i flussi l’utente può attivare/disattivare l’invio email di notifica (checkbox; default: invia).
+
 - **Tema**: `resources/js/Composables/useTheme.js` e componente `ThemeTriStateButton` per tema chiaro/scuro/system.
 
 ---
@@ -160,6 +164,8 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 | **Ruoli e permessi** | Middleware `app/Http/Middleware/EnsureUserHasRole.php`, registrazione in `bootstrap/app.php`, seed in `database/seeders/RoleSeeder.php`. |
 | **Gestione utenti (creazione, ruoli, socio)** | `App\Http\Controllers\UserController` (solo admin), route `users.index`, `users.store`, `users.roles.update`, `users.member.update`, `users.send-password-reset`, `users.destroy`; pagina `resources/js/Pages/Users/Index.vue` (modali: Crea utente, Modifica ruoli, Collega socio). |
 | **Incassi / conto di destinazione** | `App\Http\Controllers\IncassoController`, modello `Incasso` (conto_id), pagine `resources/js/Pages/Incassi/` (Create, Index, Show). Conti tesoreria: `App\Http\Controllers\ContoController`, `resources/js/Pages/Conti/`. |
+| **Template email** | `config/email_templates.php` (tipi, placeholders), `app/Models/EmailTemplate.php`, `App\Http\Controllers\EmailTemplateController`, `resources/js/Pages/EmailTemplates/` (Index, Edit con Editor/HTML raw). Seeder `EmailTemplatesSeeder`. |
+| **Approvazione soci (singola e bulk)** | `MemberController::acceptAdmission` (route `members.accept-admission`), `acceptAdmissionBulk` (route `members.accept-admission-bulk`), metodo privato `approveOneMember($member, $sendEmail)`. Frontend: `Members/Show.vue` (checkbox invio email + Accogli domanda), `Members/Index.vue` (checkbox righe, barra bulk, checkbox invio email). |
 
 ---
 

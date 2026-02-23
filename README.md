@@ -13,14 +13,14 @@ Software open source per la gestione di **Enti del Terzo Settore (ETS)**: anagra
 
 ## Funzionalità
 
-- **Soci e volontari** — Anagrafica, tipologie socio, stati (domanda, ammissione, cessazione, morosità, dimissioni, ecc.), libro soci
+- **Soci e volontari** — Anagrafica, tipologie socio, stati (domanda, ammissione, cessazione, morosità, dimissioni, ecc.), libro soci, approvazione domande singola e bulk con opzione invio email di notifica
 - **Cassa** — Incassi (quote e donazioni), ricevute, rimborsi spese con contabilizzazione automatica, fatture e invio SDI
 - **Contabilità** — Prima nota, voci del rendiconto (Modello D), report contabili, rendiconto di cassa (PDF)
 - **Organi e votazioni** — Organi e cariche definiti in config (hardcoded), incarichi, elezioni, candidature e voti
 - **Patrimonio** — Immobili e beni, magazzini, sedi, articoli
 - **Documenti** — Verbali, documenti, allegati, template
 - **Eventi** — Gestione eventi e iscrizioni
-- **Impostazioni** — Nome associazione, logo, quote, P.IVA, causali, email di test
+- **Impostazioni** — Nome associazione, logo, quote, P.IVA, causali, email di test, template email (documenti → Template email)
 
 Ruoli predefiniti: **admin**, **contabile**, **segreteria**, **socio** (con area self-service per i soci).
 
