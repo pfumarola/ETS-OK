@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmailTemplate;
 use App\Models\Receipt;
 use App\Models\Settings;
 use App\Services\ReceiptService;
@@ -84,18 +85,41 @@ class ReceiptController extends Controller
         $safeNumber = str_replace(['/', '\\'], '-', $receipt->number);
         $filename = 'ricevuta-' . $safeNumber . '.pdf';
 
+        $rawAmount = null;
+        if ($receipt->receivable) {
+            $rawAmount = $receipt->receivable->amount ?? $receipt->receivable->total ?? null;
+        }
+        $replacements = [
+            'receipt_number' => $receipt->number,
+            'receipt_issued_at' => $receipt->issued_at?->format('d/m/Y') ?? '',
+            'appName' => $appName,
+            'receipt_amount' => $rawAmount !== null && $rawAmount !== '' ? number_format((float) $rawAmount, 2, ',', '.') : '',
+            'recipient_name' => $receipt->member ? trim($receipt->member->cognome . ' ' . $receipt->member->nome) : '',
+        ];
+        $rendered = EmailTemplate::render('ricevuta', $replacements);
+
         try {
-            Mail::send('emails.receipt', [
-                'receipt' => $receipt,
-                'appName' => $appName,
-            ], function ($message) use ($email, $appName, $receipt, $filename) {
-                $message->to($email)
-                    ->subject('[' . $appName . '] Ricevuta n. ' . $receipt->number);
-                $message->attach(Storage::disk('local')->path($receipt->file_path), [
-                    'as' => $filename,
-                    'mime' => 'application/pdf',
-                ]);
-            });
+            if ($rendered) {
+                Mail::html($rendered['body'], function ($message) use ($email, $rendered, $receipt, $filename) {
+                    $message->to($email)->subject($rendered['subject']);
+                    $message->attach(Storage::disk('local')->path($receipt->file_path), [
+                        'as' => $filename,
+                        'mime' => 'application/pdf',
+                    ]);
+                });
+            } else {
+                Mail::send('emails.receipt', [
+                    'receipt' => $receipt,
+                    'appName' => $appName,
+                ], function ($message) use ($email, $appName, $receipt, $filename) {
+                    $message->to($email)
+                        ->subject('[' . $appName . '] Ricevuta n. ' . $receipt->number);
+                    $message->attach(Storage::disk('local')->path($receipt->file_path), [
+                        'as' => $filename,
+                        'mime' => 'application/pdf',
+                    ]);
+                });
+            }
 
             return redirect()->route('receipts.show', $receipt)
                 ->with('flash', ['type' => 'success', 'message' => 'Ricevuta inviata a ' . $email . '.']);

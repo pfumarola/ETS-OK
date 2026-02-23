@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmailTemplate;
 use App\Models\Member;
 use App\Models\MemberInvite;
 use App\Models\MemberType;
@@ -51,18 +52,30 @@ class MemberInviteController extends Controller
         $appName = Settings::get('nome_associazione', config('app.name'));
 
         try {
-            Mail::raw(
-                "Buongiorno,\n\n"
-                . "Sei stato/a invitato/a a presentare domanda di ammissione come socio presso {$appName}.\n\n"
-                . "Clicca sul link qui sotto per compilare il modulo (il link è personale e a uso singolo):\n\n"
-                . "{$link}\n\n"
-                . "Il link è valido per {$expiryDays} giorni. Non condividerlo con altri.\n\n"
-                . "Cordiali saluti,\n{$appName}",
-                function ($message) use ($email, $appName) {
-                    $message->to($email)
-                        ->subject("[{$appName}] Invito a presentare domanda di ammissione");
-                }
-            );
+            $rendered = EmailTemplate::render('invito_ammissione', [
+                'link' => $link,
+                'expiry_days' => (string) $expiryDays,
+                'appName' => $appName,
+            ]);
+
+            if ($rendered) {
+                Mail::html($rendered['body'], function ($message) use ($email, $rendered) {
+                    $message->to($email)->subject($rendered['subject']);
+                });
+            } else {
+                Mail::raw(
+                    "Buongiorno,\n\n"
+                    . "Sei stato/a invitato/a a presentare domanda di ammissione come socio presso {$appName}.\n\n"
+                    . "Clicca sul link qui sotto per compilare il modulo (il link è personale e a uso singolo):\n\n"
+                    . "{$link}\n\n"
+                    . "Il link è valido per {$expiryDays} giorni. Non condividerlo con altri.\n\n"
+                    . "Cordiali saluti,\n{$appName}",
+                    function ($message) use ($email, $appName) {
+                        $message->to($email)
+                            ->subject("[{$appName}] Invito a presentare domanda di ammissione");
+                    }
+                );
+            }
         } catch (\Throwable $e) {
             report($e);
 

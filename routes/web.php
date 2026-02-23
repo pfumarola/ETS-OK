@@ -27,6 +27,7 @@ use App\Http\Controllers\PrimaNotaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerbaleController;
+use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
@@ -201,6 +202,9 @@ Route::middleware([
     Route::delete('documents/{document}/attachments/{attachment}', [DocumentController::class, 'destroyAttachment'])->name('documents.attachments.destroy');
     Route::resource('documents', DocumentController::class);
     Route::resource('templates', TemplateController::class)->except(['show']);
+    Route::get('email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
+    Route::get('email-templates/{tipo}/edit', [EmailTemplateController::class, 'edit'])->name('email-templates.edit');
+    Route::put('email-templates/{tipo}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
     Route::get('verbali/prossimo-numero', [VerbaleController::class, 'prossimoNumero'])->name('verbali.prossimo-numero');
     Route::get('verbali/{verbale}/pdf', [VerbaleController::class, 'downloadPdf'])->name('verbali.pdf');
     Route::post('verbali/{verbale}/conferma', [VerbaleController::class, 'conferma'])->name('verbali.conferma');

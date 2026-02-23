@@ -10,6 +10,7 @@ import {
     ClipboardDocumentListIcon,
     CreditCardIcon,
     DocumentTextIcon,
+    EnvelopeIcon,
     BanknotesIcon,
     CalendarDaysIcon,
     BuildingOffice2Icon,
@@ -58,7 +59,7 @@ function sectionForRoute(name) {
     if (!name) return null;
     if (name.startsWith('members.') || name.startsWith('libro-soci.') || name.startsWith('member-types.')) return 'soci';
     if (name.startsWith('incassi.') || name.startsWith('quote-sociali.') || name.startsWith('donazioni.') || name.startsWith('receipts.') || name.startsWith('expense-refunds.')) return 'cassa';
-    if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.')) return 'documenti';
+    if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.') || name.startsWith('email-templates.')) return 'documenti';
     if (name.startsWith('organi.') || name.startsWith('elezioni.')) return 'organiVotazioni';
     if (name.startsWith('events.') || name.startsWith('properties.') || name.startsWith('items.') || name.startsWith('locations.') || name.startsWith('warehouses.')) return 'patrimonio';
     if (name.startsWith('conti.') || name.startsWith('prima-nota.') || name === 'reports.accounting' || name === 'reports.rendiconto-cassa') return 'contabilita';
@@ -247,6 +248,10 @@ const logout = () => {
                                     <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
                                     Template
                                 </ResponsiveNavLink>
+                                <ResponsiveNavLink v-if="$page.props.userRoles?.includes('admin')" :href="route('email-templates.index')" :active="route().current('email-templates.*')">
+                                    <EnvelopeIcon class="size-4 shrink-0" aria-hidden="true" />
+                                    Template email
+                                </ResponsiveNavLink>
                             </div>
                         </div>
                         <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')" class="pt-2">
@@ -427,6 +432,10 @@ const logout = () => {
                                         <NavLink :href="route('templates.index')" :active="route().current('templates.*')">
                                             <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
                                             Template
+                                        </NavLink>
+                                        <NavLink v-if="$page.props.userRoles?.includes('admin')" :href="route('email-templates.index')" :active="route().current('email-templates.*')">
+                                            <EnvelopeIcon class="size-4 shrink-0" aria-hidden="true" />
+                                            Template email
                                         </NavLink>
                                     </div>
                                 </div>
