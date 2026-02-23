@@ -309,7 +309,7 @@ async function generaPdf() {
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">
                                             {{ blocco.titolo_entrate ? (AREE_LETTERE.includes(blocco.area) ? blocco.area + ') ' : '') + blocco.titolo_entrate : '—' }}
-                                        </td>
+                                    </td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
                                     </tr>

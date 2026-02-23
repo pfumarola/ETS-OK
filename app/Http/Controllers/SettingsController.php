@@ -65,6 +65,7 @@ class SettingsController extends Controller
             'codice_fiscale_associazione' => Settings::get('codice_fiscale_associazione', ''),
             'partita_iva_associazione' => Settings::get('partita_iva_associazione', ''),
             'legale_rappresentante_associazione' => Settings::get('legale_rappresentante_associazione', ''),
+            'data_costituzione_associazione' => self::normalizeDateForInput(Settings::get('data_costituzione_associazione', '')),
             'data_iscrizione_runts' => self::normalizeDateForInput(Settings::get('data_iscrizione_runts', '')),
             'ets_è_odv' => (bool) Settings::get('ets_è_odv', false),
             'luogo_emissione_ricevute' => Settings::get('luogo_emissione_ricevute', ''),
@@ -97,6 +98,7 @@ class SettingsController extends Controller
             'codice_fiscale_associazione' => 'nullable|string|max:16',
             'partita_iva_associazione' => 'nullable|string|max:20',
             'legale_rappresentante_associazione' => 'nullable|string|max:255',
+            'data_costituzione_associazione' => 'nullable|date',
             'data_iscrizione_runts' => 'nullable|string|max:20',
             'ets_è_odv' => 'nullable|boolean',
             'luogo_emissione_ricevute' => 'nullable|string|max:255',
@@ -125,6 +127,7 @@ class SettingsController extends Controller
         Settings::set('codice_fiscale_associazione', $request->input('codice_fiscale_associazione', ''));
         Settings::set('partita_iva_associazione', $request->input('partita_iva_associazione', ''));
         Settings::set('legale_rappresentante_associazione', $request->input('legale_rappresentante_associazione', ''));
+        Settings::set('data_costituzione_associazione', $request->input('data_costituzione_associazione', ''));
         Settings::set('data_iscrizione_runts', $request->input('data_iscrizione_runts', ''));
         Settings::set('ets_è_odv', $request->boolean('ets_è_odv') ? '1' : '0');
         Settings::set('luogo_emissione_ricevute', $request->input('luogo_emissione_ricevute', ''));

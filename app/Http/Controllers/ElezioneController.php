@@ -24,7 +24,7 @@ class ElezioneController extends Controller
             $query->where('organo_id', $request->organo_id);
         }
         $elezioni = $query->orderByDesc('data_elezione')->paginate(15)->withQueryString();
-        $organi = Organo::orderBy('nome')->get(['id', 'nome']);
+        $organi = Organo::orderBy('nome')->get(['id', 'slug', 'nome']);
 
         return Inertia::render('Elezioni/Index', [
             'elezioni' => $elezioni,
@@ -35,7 +35,7 @@ class ElezioneController extends Controller
 
     public function create()
     {
-        $organi = Organo::orderBy('nome')->get(['id', 'nome']);
+        $organi = Organo::orderBy('nome')->get(['id', 'slug', 'nome']);
 
         return Inertia::render('Elezioni/Create', [
             'organi' => $organi,
@@ -50,8 +50,9 @@ class ElezioneController extends Controller
             'data_elezione' => 'required|date',
             'permetti_astenuti' => 'boolean',
         ]);
+        $organoId = $request->organo_id ?: Organo::where('slug', 'consiglio_direttivo')->first()?->id;
         $elezione = Elezione::create([
-            'organo_id' => $request->organo_id ?: null,
+            'organo_id' => $organoId,
             'titolo' => $request->titolo,
             'data_elezione' => $request->data_elezione,
             'stato' => Elezione::STATO_BOZZA,
@@ -81,7 +82,7 @@ class ElezioneController extends Controller
             return redirect()->route('elezioni.show', $elezione)->with('flash', ['type' => 'error', 'message' => 'Solo le elezioni in bozza possono essere modificate.']);
         }
         $elezione->load(['organo', 'candidature.member']);
-        $organi = Organo::orderBy('nome')->get(['id', 'nome']);
+        $organi = Organo::orderBy('nome')->get(['id', 'slug', 'nome']);
         $members = Member::nonCessati()->orderBy('cognome')->orderBy('nome')->get(['id', 'nome', 'cognome']);
 
         return Inertia::render('Elezioni/Edit', [
@@ -102,7 +103,11 @@ class ElezioneController extends Controller
             'data_elezione' => 'required|date',
             'permetti_astenuti' => 'boolean',
         ]);
-        $elezione->update($request->only(['organo_id', 'titolo', 'data_elezione', 'permetti_astenuti']));
+        $data = $request->only(['organo_id', 'titolo', 'data_elezione', 'permetti_astenuti']);
+        if (empty($data['organo_id'])) {
+            $data['organo_id'] = Organo::where('slug', 'consiglio_direttivo')->first()?->id;
+        }
+        $elezione->update($data);
 
         return redirect()->route('elezioni.show', $elezione)->with('flash', ['type' => 'success', 'message' => 'Elezione aggiornata.']);
     }

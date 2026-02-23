@@ -25,14 +25,24 @@ class IncaricoController extends Controller
             'carica_sociale_id' => $request->carica_sociale_id,
         ]);
 
+        if ($request->filled('redirect_to_organo_slug')) {
+            return redirect()->route('organi.show', $request->redirect_to_organo_slug)
+                ->with('flash', ['type' => 'success', 'message' => 'Carica assegnata.']);
+        }
+
         return redirect()->back()->with('flash', ['type' => 'success', 'message' => 'Carica assegnata.']);
     }
 
-    public function destroy(Incarico $incarico)
+    public function destroy(Request $request, Incarico $incarico)
     {
         $member = $incarico->member;
         $this->authorize('update', $member);
         $incarico->delete();
+
+        if ($request->filled('redirect_to_organo_slug')) {
+            return redirect()->route('organi.show', $request->redirect_to_organo_slug)
+                ->with('flash', ['type' => 'success', 'message' => 'Incarico rimosso.']);
+        }
 
         return redirect()->route('members.show', $member)->with('flash', ['type' => 'success', 'message' => 'Incarico rimosso.']);
     }

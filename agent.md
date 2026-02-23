@@ -11,7 +11,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 - **Soci e volontari**: anagrafica, tipi socio, stati (domanda, ammissione, cessazione, decesso, morosità, dimissioni, esclusione), libro soci
 - **Cassa**: incassi (quote e donazioni), ricevute, rimborsi spese (approvazione → contabilizzazione automatica: una voce prima nota per riga; descrizione = descrizione riga + riferimento rimborso, es. «Rimborso spese #5»)
 - **Contabilità**: voci del rendiconto (Modello D, schema fisso in config), prima nota, report contabili, rendiconto di cassa (PDF)
-- **Organi e votazioni**: organi, cariche sociali, incarichi, elezioni, candidature, voti
+- **Organi e votazioni**: **organi e cariche hardcoded** da `config/organi.php` (slug, nome, cariche); il seeder `OrganiHardcodedSeeder` sincronizza il DB. Identificazione per **slug** (es. `consiglio_direttivo`). Incarichi, elezioni, candidature, voti. Per aggiungere un organo: modificare config e eseguire il seeder.
 - **Patrimonio**: immobili e beni, magazzini, ubicazioni, articoli
 - **Documenti**: verbali, documenti, allegati
 - **Eventi**: eventi e iscrizioni

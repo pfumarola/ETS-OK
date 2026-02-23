@@ -16,13 +16,23 @@ Software open source per la gestione di **Enti del Terzo Settore (ETS)**: anagra
 - **Soci e volontari** — Anagrafica, tipologie socio, stati (domanda, ammissione, cessazione, morosità, dimissioni, ecc.), libro soci
 - **Cassa** — Incassi (quote e donazioni), ricevute, rimborsi spese con contabilizzazione automatica, fatture e invio SDI
 - **Contabilità** — Prima nota, voci del rendiconto (Modello D), report contabili, rendiconto di cassa (PDF)
-- **Organi e votazioni** — Organi, cariche sociali, incarichi, elezioni, candidature e voti
+- **Organi e votazioni** — Organi e cariche definiti in config (hardcoded), incarichi, elezioni, candidature e voti
 - **Patrimonio** — Immobili e beni, magazzini, sedi, articoli
 - **Documenti** — Verbali, documenti, allegati, template
 - **Eventi** — Gestione eventi e iscrizioni
 - **Impostazioni** — Nome associazione, logo, quote, P.IVA, causali, email di test
 
 Ruoli predefiniti: **admin**, **contabile**, **segreteria**, **socio** (con area self-service per i soci).
+
+---
+
+## Organi e cariche
+
+Gli **organi** (es. Consiglio direttivo) e le **cariche** (Presidente, Vicepresidente, Tesoriere, Segretario, Consigliere) sono definiti in modo fisso in **`config/organi.php`**: l’applicazione non permette di creare, modificare o eliminare organi o cariche dall’interfaccia; è possibile solo **assegnare i soci alle cariche** (incarichi).
+
+- **Struttura**: in config ogni organo ha uno **slug** (es. `consiglio_direttivo`), un nome e l’elenco delle cariche (nome + ordine). Il seeder `OrganiHardcodedSeeder` sincronizza il database con la config (crea organi e cariche se non esistono).
+- **URL e codice**: le pagine degli organi usano lo slug nell’URL (es. `/organi/consiglio-direttivo`); in codice l’organo si risolve con lo slug (es. `Organo::where('slug', 'consiglio_direttivo')->first()`).
+- **Aggiungere un nuovo organo**: 1) in `config/organi.php` aggiungere un elemento all’array con **slug** (univoco), **nome** e **cariche** (nome + ordine); 2) eseguire `php artisan db:seed --class=OrganiHardcodedSeeder`. Il nuovo organo comparirà nell’elenco Organi, nelle Elezioni (select/filtro) e nel select “Assegna carica” nella scheda socio.
 
 ---
 

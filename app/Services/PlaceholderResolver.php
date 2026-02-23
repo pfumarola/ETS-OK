@@ -107,15 +107,7 @@ class PlaceholderResolver
 
     private static function getOrganoConsiglioDirettivo(): ?Organo
     {
-        $organoId = Settings::get('organo_id_consiglio_direttivo');
-        if ($organoId !== null && $organoId !== '') {
-            $organo = Organo::find($organoId);
-            if ($organo !== null) {
-                return $organo;
-            }
-        }
-
-        return Organo::whereRaw('LOWER(nome) LIKE ?', ['%direttivo%'])->first();
+        return Organo::where('slug', 'consiglio_direttivo')->first();
     }
 
     private static function resolveSedeLegale(): string

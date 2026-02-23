@@ -94,10 +94,8 @@ Route::middleware([
     Route::delete('incarichi/{incarico}', [IncaricoController::class, 'destroy'])->name('incarichi.destroy');
     Route::get('libro-soci', [MemberController::class, 'libroSoci'])->name('libro-soci.index');
     Route::resource('member-types', MemberTypeController::class)->except(['show']);
-    Route::resource('organi', OrganoController::class);
-    Route::post('cariche-sociali', [CaricaSocialeController::class, 'store'])->name('cariche-sociali.store');
-    Route::put('cariche-sociali/{cariche_sociali}', [CaricaSocialeController::class, 'update'])->name('cariche-sociali.update');
-    Route::delete('cariche-sociali/{cariche_sociali}', [CaricaSocialeController::class, 'destroy'])->name('cariche-sociali.destroy');
+    Route::get('organi', [OrganoController::class, 'index'])->name('organi.index');
+    Route::get('organi/{organo:slug}', [OrganoController::class, 'show'])->name('organi.show');
     Route::middleware('role:admin,segreteria')->group(function () {
         Route::get('elezioni', [ElezioneController::class, 'index'])->name('elezioni.index');
         Route::get('elezioni/create', [ElezioneController::class, 'create'])->name('elezioni.create');

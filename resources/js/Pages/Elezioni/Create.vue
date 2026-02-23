@@ -1,4 +1,5 @@
 <script setup>
+import { computed, onMounted } from 'vue';
 import { CheckIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -9,11 +10,22 @@ import TextInput from '@/Components/TextInput.vue';
 
 const props = defineProps({ organi: Array });
 
+const defaultOrganoId = computed(() => {
+    const o = props.organi?.find((x) => x.slug === 'consiglio_direttivo');
+    return o ? String(o.id) : '';
+});
+
 const form = useForm({
     organo_id: '',
     titolo: '',
     data_elezione: new Date().toISOString().slice(0, 10),
     permetti_astenuti: false,
+});
+
+onMounted(() => {
+    if (!form.organo_id && defaultOrganoId.value) {
+        form.organo_id = defaultOrganoId.value;
+    }
 });
 </script>
 

@@ -10,12 +10,13 @@ class CaricaSociale extends Model
 {
     protected $table = 'cariche_sociali';
 
-    protected $fillable = ['organo_id', 'nome', 'ordine'];
+    protected $fillable = ['organo_id', 'nome', 'ordine', 'multiplo'];
 
     protected function casts(): array
     {
         return [
             'ordine' => 'integer',
+            'multiplo' => 'boolean',
         ];
     }
 

@@ -19,6 +19,7 @@ const props = defineProps({
     codice_fiscale_associazione: String,
     partita_iva_associazione: String,
     legale_rappresentante_associazione: String,
+    data_costituzione_associazione: String,
     data_iscrizione_runts: String,
     ets_è_odv: Boolean,
     luogo_emissione_ricevute: String,
@@ -104,6 +105,7 @@ const form = useForm({
     codice_fiscale_associazione: props.codice_fiscale_associazione ?? '',
     partita_iva_associazione: props.partita_iva_associazione ?? '',
     legale_rappresentante_associazione: props.legale_rappresentante_associazione ?? '',
+    data_costituzione_associazione: props.data_costituzione_associazione ?? '',
     data_iscrizione_runts: props.data_iscrizione_runts ?? '',
     ets_è_odv: props.ets_è_odv ?? false,
     luogo_emissione_ricevute: props.luogo_emissione_ricevute ?? '',
@@ -268,6 +270,17 @@ const placeholderSottotitolo = 'Es: Benvenuti nel sito di \u007B\u007Bnome_assoc
                             <InputLabel for="legale_rappresentante_associazione" value="Legale rappresentante" />
                             <TextInput id="legale_rappresentante_associazione" v-model="form.legale_rappresentante_associazione" type="text" class="mt-1 block w-full" placeholder="Nome e cognome" />
                             <InputError class="mt-1" :message="form.errors.legale_rappresentante_associazione" />
+                        </div>
+                        <div>
+                            <InputLabel for="data_costituzione_associazione" value="Data di costituzione dell'associazione" />
+                            <input
+                                id="data_costituzione_associazione"
+                                v-model="form.data_costituzione_associazione"
+                                type="date"
+                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                            />
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Usata come inizio mandato per gli organi in assenza di elezioni.</p>
+                            <InputError class="mt-1" :message="form.errors.data_costituzione_associazione" />
                         </div>
                         <div>
                             <InputLabel for="data_iscrizione_runts" value="Data iscrizione RUNTS" />

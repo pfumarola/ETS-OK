@@ -9,7 +9,6 @@ use App\Models\Incasso;
 use App\Models\Member;
 use App\Models\Organo;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -56,25 +55,22 @@ class DashboardController extends Controller
         $today = now()->startOfDay();
         $scadenzaEntro = $today->copy()->addDays(90);
 
-        // Organi con mandato in scadenza (mandato_da + durata_mesi entro 90 giorni)
-        // Sintassi diversa per SQLite vs MySQL/MariaDB
-        $driver = DB::connection()->getDriverName();
-        $mandatoScadenzaExpr = $driver === 'sqlite'
-            ? "date(mandato_da, '+' || durata_mesi || ' months')"
-            : 'DATE_ADD(mandato_da, INTERVAL durata_mesi MONTH)';
+        // Organi con mandato in scadenza: scadenza calcolata da ultime elezioni o data costituzione
         $organiInScadenza = Organo::query()
-            ->whereNotNull('mandato_da')
             ->whereNotNull('durata_mesi')
             ->where('durata_mesi', '>', 0)
-            ->whereRaw("{$mandatoScadenzaExpr} >= ?", [$today->toDateString()])
-            ->whereRaw("{$mandatoScadenzaExpr} <= ?", [$scadenzaEntro->toDateString()])
-            ->select(['id', 'nome', 'mandato_da', 'durata_mesi'])
-            ->selectRaw("{$mandatoScadenzaExpr} as mandato_scadenza")
-            ->orderByRaw($mandatoScadenzaExpr)
+            ->orderBy('nome')
+            ->get()
+            ->filter(function (Organo $organo) use ($today, $scadenzaEntro) {
+                $s = $organo->mandatoScadenza();
+                return $s && $s->gte($today) && $s->lte($scadenzaEntro);
+            })
             ->take(10)
-            ->get();
-
-        // Carica le cariche sociali con gli incarichi per ciascun organo in scadenza
+            ->values();
+        foreach ($organiInScadenza as $o) {
+            $o->setAttribute('mandato_da', $o->dataInizioMandato()?->toDateString());
+            $o->setAttribute('mandato_scadenza', $o->mandatoScadenza()?->toDateString());
+        }
         $organiInScadenza->load(['caricheSociali' => function ($q) {
             $q->orderBy('ordine')->with(['incarichi' => function ($q2) {
                 $q2->with('member:id,cognome,nome');
