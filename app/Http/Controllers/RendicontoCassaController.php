@@ -179,6 +179,7 @@ class RendicontoCassaController extends Controller
             'totale_uscite' => round($totaleUscite, 2),
             'risultato_per_cassa' => $risultatoPerCassa,
             'data_generazione' => $dataGenerazione,
+            'conti_saldi' => $service->buildContiSaldi($anno),
         ];
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('rendiconto_cassa.template', [

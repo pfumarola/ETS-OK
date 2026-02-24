@@ -63,9 +63,19 @@ const risultatoPerCassa = computed(() => {
 });
 
 const formatEuro = (n) => '€ ' + Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtNum = (n) => (n != null && n !== '') ? Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+const fmtNum = (n) => (n != null && n !== '') ? Number(n).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
 
 const AREE_LETTERE = ['A', 'B', 'C', 'D', 'E'];
+
+/** Formato voce: solo parte numerica "n) descrizione" (es. "A.1" -> "1) Materie prime", "INV.9" -> "9) Imposte"). */
+function voceLabel(code, descrizione) {
+    const c = code ?? '';
+    const desc = descrizione ?? '';
+    let num = c;
+    const pos = c.lastIndexOf('.');
+    if (pos !== -1) num = c.slice(pos + 1);
+    return num ? `${num}) ${desc}` : desc;
+}
 
 /** Costruisce blocchi per tabella 6 colonne (come Blade): raggruppa per area, righe con celle vuote. */
 function buildBlocchiTabella(sezioni, includeVoceRefs = false) {
@@ -97,8 +107,8 @@ function buildBlocchiTabella(sezioni, includeVoceRefs = false) {
         for (let i = 0; i < n; i++) {
             const vu = vociU[i] ?? null;
             const ve = vociE[i] ?? null;
-            const descU = vu ? `${vu.ministerial_code ?? vu.codice_voce} – ${vu.descrizione ?? ''}` : '';
-            const descE = ve ? `${ve.ministerial_code ?? ve.codice_voce} – ${ve.descrizione ?? ''}` : '';
+            const descU = vu ? voceLabel(vu.ministerial_code ?? vu.codice_voce, vu.descrizione ?? '') : '';
+            const descE = ve ? voceLabel(ve.ministerial_code ?? ve.codice_voce, ve.descrizione ?? '') : '';
             righe.push({
                 desc_u: descU,
                 t_u: vu ? Number(vu.importo) || 0 : null,
@@ -137,8 +147,8 @@ function buildBlocchiTabella(sezioni, includeVoceRefs = false) {
         for (let i = 0; i < n; i++) {
             const vu = vociU[i] ?? null;
             const ve = vociE[i] ?? null;
-            const descU = vu ? `${vu.ministerial_code ?? vu.codice_voce} – ${vu.descrizione ?? ''}` : '';
-            const descE = ve ? `${ve.ministerial_code ?? ve.codice_voce} – ${ve.descrizione ?? ''}` : '';
+            const descU = vu ? voceLabel(vu.ministerial_code ?? vu.codice_voce, vu.descrizione ?? '') : '';
+            const descE = ve ? voceLabel(ve.ministerial_code ?? ve.codice_voce, ve.descrizione ?? '') : '';
             righe.push({
                 desc_u: descU,
                 t_u: vu ? Number(vu.importo) || 0 : null,
@@ -149,10 +159,17 @@ function buildBlocchiTabella(sezioni, includeVoceRefs = false) {
                 ...(includeVoceRefs && { voceU: vu, voceE: ve }),
             });
         }
+        const nome = m.sezione ?? '';
+        let titoloU = nome;
+        let titoloE = nome;
+        if (nome.includes('Entrate/Uscite')) {
+            titoloU = nome.replace('Entrate/Uscite', 'Uscite');
+            titoloE = nome.replace('Entrate/Uscite', 'Entrate');
+        }
         out.push({
             area: 'INV',
-            titolo_uscite: m.sezione ?? '',
-            titolo_entrate: m.sezione ?? '',
+            titolo_uscite: titoloU,
+            titolo_entrate: titoloE,
             righe,
             tot_u: Math.round(totU * 100) / 100,
             tot_u1: Math.round(totU1 * 100) / 100,
@@ -169,17 +186,92 @@ function buildBlocchiTabella(sezioni, includeVoceRefs = false) {
 const blocchiTabella = computed(() => buildBlocchiTabella(props.rendiconto?.sezioni ?? [], false));
 const editBlocchiTabella = computed(() => buildBlocchiTabella(editSezioni.value, true));
 
+const blocchiAE = computed(() => (blocchiTabella.value ?? []).filter((b) => AREE_LETTERE.includes(b.area)));
+const blocchiInvestimenti = computed(() => (blocchiTabella.value ?? []).filter((b) => b.area === 'INV'));
+
+const totaleEntrateAE = computed(() => blocchiAE.value.reduce((s, b) => s + (Number(b.tot_e) || 0), 0));
+const totaleUsciteAE = computed(() => blocchiAE.value.reduce((s, b) => s + (Number(b.tot_u) || 0), 0));
+const risultatoAE = computed(() => Math.round((totaleEntrateAE.value - totaleUsciteAE.value) * 100) / 100);
+const totaleEntrateAE1 = computed(() => blocchiAE.value.reduce((s, b) => s + (Number(b.tot_e1) || 0), 0));
+const totaleUsciteAE1 = computed(() => blocchiAE.value.reduce((s, b) => s + (Number(b.tot_u1) || 0), 0));
+const risultatoAE1 = computed(() => Math.round((totaleEntrateAE1.value - totaleUsciteAE1.value) * 100) / 100);
+
+const totaleEntrateINV = computed(() => blocchiInvestimenti.value.reduce((s, b) => s + (Number(b.tot_e) || 0), 0));
+const totaleUsciteINV = computed(() => blocchiInvestimenti.value.reduce((s, b) => s + (Number(b.tot_u) || 0), 0));
+const avanzoINV_t = computed(() => Math.round((totaleEntrateINV.value - totaleUsciteINV.value) * 100) / 100);
+const avanzoINV_t1 = computed(() => {
+    const e1 = blocchiInvestimenti.value.reduce((s, b) => s + (Number(b.tot_e1) || 0), 0);
+    const u1 = blocchiInvestimenti.value.reduce((s, b) => s + (Number(b.tot_u1) || 0), 0);
+    return Math.round((e1 - u1) * 100) / 100;
+});
+const imposteInv = computed(() => {
+    const sezioni = props.rendiconto?.sezioni ?? [];
+    let esT = 0;
+    let esT1 = 0;
+    for (const s of sezioni) {
+        if (s.tipo_sezione !== 'misto') continue;
+        for (const v of s.voci ?? []) {
+            if (v.codice_voce === 'EXP_TAXES') {
+                esT += Number(v.importo) || 0;
+                esT1 += Number(v.importo_anno_precedente) || 0;
+            }
+        }
+    }
+    return { es_t: Math.round(esT * 100) / 100, es_t1: Math.round(esT1 * 100) / 100 };
+});
+
+const righeDopoE = computed(() => [
+    { etichetta: "Avanzo/disavanzo d'esercizio prima delle imposte", es_t: risultatoAE.value, es_t1: risultatoAE1.value },
+    { etichetta: 'Imposte', es_t: null, es_t1: null },
+    { etichetta: "Avanzo/disavanzo d'esercizio prima di investimenti e disinvestimenti patrimoniali, e finanziamenti", es_t: risultatoAE.value, es_t1: risultatoAE1.value },
+]);
+const righeDopoInv = computed(() => [
+    { etichetta: 'Imposte', es_t: imposteInv.value.es_t, es_t1: imposteInv.value.es_t1 },
+    { etichetta: "Avanzo/disavanzo da entrate e uscite per investimenti e disinvestimenti patrimoniali e finanziamenti", es_t: avanzoINV_t.value, es_t1: avanzoINV_t1.value },
+]);
 const righeSintesi = computed(() => {
-    const totE = Number(props.rendiconto?.totale_entrate ?? 0);
-    const totU = Number(props.rendiconto?.totale_uscite ?? 0);
     const ris = Number(props.rendiconto?.risultato_per_cassa ?? 0);
+    const ris1 = Math.round((risultatoAE1.value + avanzoINV_t1.value) * 100) / 100;
     return [
-        { etichetta: "Avanzo/disavanzo d'esercizio prima delle imposte", es_t: ris, es_t1: null },
-        { etichetta: 'Imposte', es_t: null, es_t1: null },
-        { etichetta: "Avanzo/disavanzo d'esercizio prima di investimenti e disinvestimenti patrimoniali, e finanziamenti", es_t: ris, es_t1: null },
-        { etichetta: 'Avanzo/disavanzo complessivo', es_t: ris, es_t1: null },
+        { etichetta: "Avanzo/disavanzo d'esercizio prima di investimenti e disinvestimenti patrimoniali e finanziamenti", es_t: risultatoAE.value, es_t1: risultatoAE1.value },
+        { etichetta: "Avanzo/disavanzo da entrate e uscite per investimenti e disinvestimenti patrimoniali e finanziamenti", es_t: avanzoINV_t.value, es_t1: avanzoINV_t1.value },
+        { etichetta: 'Avanzo/disavanzo complessivo', es_t: ris, es_t1: ris1 },
     ];
 });
+const contiSaldi = computed(() => props.rendiconto?.conti_saldi ?? []);
+
+const editBlocchiAE = computed(() => (editBlocchiTabella.value ?? []).filter((b) => AREE_LETTERE.includes(b.area)));
+const editBlocchiInvestimenti = computed(() => (editBlocchiTabella.value ?? []).filter((b) => b.area === 'INV'));
+const editTotaleEntrateAE = computed(() => editBlocchiAE.value.reduce((s, b) => s + (Number(b.tot_e) || 0), 0));
+const editTotaleUsciteAE = computed(() => editBlocchiAE.value.reduce((s, b) => s + (Number(b.tot_u) || 0), 0));
+const editRisultatoAE = computed(() => Math.round((editTotaleEntrateAE.value - editTotaleUsciteAE.value) * 100) / 100);
+const editTotaleEntrateINV = computed(() => editBlocchiInvestimenti.value.reduce((s, b) => s + (Number(b.tot_e) || 0), 0));
+const editTotaleUsciteINV = computed(() => editBlocchiInvestimenti.value.reduce((s, b) => s + (Number(b.tot_u) || 0), 0));
+const editAvanzoINV = computed(() => Math.round((editTotaleEntrateINV.value - editTotaleUsciteINV.value) * 100) / 100);
+const editImposteInv = computed(() => {
+    let esT = 0;
+    for (const s of editSezioni.value) {
+        if (s.tipo_sezione !== 'misto') continue;
+        for (const v of s.voci ?? []) {
+            if (v.codice_voce === 'EXP_TAXES') esT += Number(v.importo) || 0;
+        }
+    }
+    return Math.round(esT * 100) / 100;
+});
+const editRigheDopoE = computed(() => [
+    { etichetta: "Avanzo/disavanzo d'esercizio prima delle imposte", es_t: editRisultatoAE.value, es_t1: null },
+    { etichetta: 'Imposte', es_t: null, es_t1: null },
+    { etichetta: "Avanzo/disavanzo d'esercizio prima di investimenti e disinvestimenti patrimoniali, e finanziamenti", es_t: editRisultatoAE.value, es_t1: null },
+]);
+const editRigheDopoInv = computed(() => [
+    { etichetta: 'Imposte', es_t: editImposteInv.value, es_t1: null },
+    { etichetta: "Avanzo/disavanzo da entrate e uscite per investimenti e disinvestimenti patrimoniali e finanziamenti", es_t: editAvanzoINV.value, es_t1: null },
+]);
+const editRigheBloccoImmagine = computed(() => [
+    { etichetta: "Avanzo/disavanzo d'esercizio prima di investimenti e disinvestimenti patrimoniali e finanziamenti", es_t: editRisultatoAE.value, es_t1: null },
+    { etichetta: "Avanzo/disavanzo da entrate e uscite per investimenti e disinvestimenti patrimoniali e finanziamenti", es_t: editAvanzoINV.value, es_t1: null },
+    { etichetta: 'Avanzo/disavanzo complessivo', es_t: risultatoPerCassa.value, es_t1: null },
+]);
 
 const avanzoLabel = (area) => {
     const labels = { A: 'di interesse generale', B: 'diverse', C: 'di raccolta fondi', D: 'finanziarie e patrimoniali' };
@@ -296,26 +388,26 @@ async function generaPdf() {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                                <template v-for="(blocco, bi) in blocchiTabella" :key="'b-' + blocco.area + '-' + bi">
+                                <template v-for="(blocco, bi) in blocchiAE" :key="'ae-' + blocco.area + '-' + bi">
                                     <tr>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">
-                                            {{ blocco.titolo_uscite ? (AREE_LETTERE.includes(blocco.area) ? blocco.area + ') ' : '') + blocco.titolo_uscite : '—' }}
+                                            {{ blocco.titolo_uscite ? blocco.area + ') ' + blocco.titolo_uscite : '' }}
                                         </td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">
-                                            {{ blocco.titolo_entrate ? (AREE_LETTERE.includes(blocco.area) ? blocco.area + ') ' : '') + blocco.titolo_entrate : '—' }}
-                                    </td>
+                                            {{ blocco.titolo_entrate ? blocco.area + ') ' + blocco.titolo_entrate : '' }}
+                                        </td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
                                     </tr>
-                                    <tr v-for="(r, ri) in blocco.righe" :key="'r-' + bi + '-' + ri">
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-gray-700 dark:text-gray-300">{{ r.desc_u || '—' }}</td>
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-red-600">{{ r.t_u != null ? fmtNum(r.t_u) : '—' }}</td>
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '—' }}</td>
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-gray-700 dark:text-gray-300">{{ r.desc_e || '—' }}</td>
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-green-600">{{ r.t_e != null ? fmtNum(r.t_e) : '—' }}</td>
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '—' }}</td>
+                                    <tr v-for="(r, ri) in blocco.righe" :key="'aer-' + bi + '-' + ri">
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-gray-700 dark:text-gray-300">{{ r.desc_u || '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-red-600">{{ r.t_u != null ? fmtNum(r.t_u) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-gray-700 dark:text-gray-300">{{ r.desc_e || '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-green-600">{{ r.t_e != null ? fmtNum(r.t_e) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</td>
                                     </tr>
                                     <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5">Totale</td>
@@ -328,28 +420,77 @@ async function generaPdf() {
                                     <tr v-if="blocco.mostra_avanzo">
                                         <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5"></td>
                                         <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">Avanzo/disavanzo attività {{ avanzoLabel(blocco.area) }}</td>
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ blocco.avanzo_t != null ? fmtNum(blocco.avanzo_t) : '—' }}</td>
-                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ blocco.avanzo_t1 != null ? fmtNum(blocco.avanzo_t1) : '—' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ blocco.avanzo_t != null ? fmtNum(blocco.avanzo_t) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ blocco.avanzo_t1 != null ? fmtNum(blocco.avanzo_t1) : '' }}</td>
                                     </tr>
                                 </template>
                                 <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                     <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5"></td>
                                     <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5">Totale entrate della gestione</td>
-                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(rendiconto?.totale_entrate) }}</td>
-                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">—</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(totaleEntrateAE) }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(totaleEntrateAE1) }}</td>
                                 </tr>
                                 <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                     <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5">Totale uscite della gestione</td>
-                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(rendiconto?.totale_uscite) }}</td>
-                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">—</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(totaleUsciteAE) }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(totaleUsciteAE1) }}</td>
                                     <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5"></td>
                                 </tr>
-                                <tr v-for="(rs, rsi) in righeSintesi" :key="'s-' + rsi">
+                                <tr v-for="(rs, rsi) in righeDopoE" :key="'dopoe-' + rsi">
                                     <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5"></td>
                                     <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">{{ rs.etichetta }}</td>
-                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t != null ? fmtNum(rs.es_t) : '—' }}</td>
-                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t1 != null ? fmtNum(rs.es_t1) : '—' }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t != null ? fmtNum(rs.es_t) : '' }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t1 != null ? fmtNum(rs.es_t1) : '' }}</td>
                                 </tr>
+                                <template v-for="(blocco, bi) in blocchiInvestimenti" :key="'inv-' + bi">
+                                    <tr>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">{{ blocco.titolo_uscite || '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">{{ blocco.titolo_entrate || '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right"></td>
+                                    </tr>
+                                    <tr v-for="(r, ri) in blocco.righe" :key="'invr-' + bi + '-' + ri">
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-gray-700 dark:text-gray-300">{{ r.desc_u || '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-red-600">{{ r.t_u != null ? fmtNum(r.t_u) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-gray-700 dark:text-gray-300">{{ r.desc_e || '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-green-600">{{ r.t_e != null ? fmtNum(r.t_e) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</td>
+                                    </tr>
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5">Totale</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(blocco.tot_u) }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(blocco.tot_u1) }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5">Totale</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(blocco.tot_e) }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ fmtNum(blocco.tot_e1) }}</td>
+                                    </tr>
+                                </template>
+                                <tr v-for="(rs, rsi) in righeDopoInv" :key="'dopoinv-' + rsi">
+                                    <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5"></td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">{{ rs.etichetta }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t != null ? fmtNum(rs.es_t) : '' }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t1 != null ? fmtNum(rs.es_t1) : '' }}</td>
+                                </tr>
+                                <tr v-for="(rs, rsi) in righeSintesi" :key="'img-' + rsi">
+                                    <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5"></td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 font-medium">{{ rs.etichetta }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t != null ? fmtNum(rs.es_t) : '' }}</td>
+                                    <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ rs.es_t1 != null ? fmtNum(rs.es_t1) : '' }}</td>
+                                </tr>
+                                <template v-if="contiSaldi.length">
+                                    <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
+                                        <td colspan="6" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5">CASSA E BANCA</td>
+                                    </tr>
+                                    <tr v-for="(conto, ci) in contiSaldi" :key="'conto-' + ci">
+                                        <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-3 py-1.5"></td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5">{{ conto.nome }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ conto.saldo_anno != null ? fmtNum(conto.saldo_anno) : '' }}</td>
+                                        <td class="border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-right">{{ conto.saldo_anno_precedente != null ? fmtNum(conto.saldo_anno_precedente) : '' }}</td>
+                                    </tr>
+                                </template>
                             </tbody>
                         </table>
                     </div>
@@ -389,15 +530,15 @@ async function generaPdf() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <template v-for="(blocco, bi) in editBlocchiTabella" :key="'eb-' + blocco.area + '-' + bi">
+                                        <template v-for="(blocco, bi) in editBlocchiAE" :key="'eba-' + blocco.area + '-' + bi">
                                             <tr>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ blocco.titolo_uscite ? (AREE_LETTERE.includes(blocco.area) ? blocco.area + ') ' : '') + blocco.titolo_uscite : '—' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ blocco.titolo_uscite ? blocco.area + ') ' + blocco.titolo_uscite : '' }}</td>
                                                 <td colspan="2" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ blocco.titolo_entrate ? (AREE_LETTERE.includes(blocco.area) ? blocco.area + ') ' : '') + blocco.titolo_entrate : '—' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ blocco.titolo_entrate ? blocco.area + ') ' + blocco.titolo_entrate : '' }}</td>
                                                 <td colspan="2" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
                                             </tr>
-                                            <tr v-for="(r, ri) in blocco.righe" :key="'er-' + bi + '-' + ri">
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_u || '—' }}</td>
+                                            <tr v-for="(r, ri) in blocco.righe" :key="'eba-r-' + bi + '-' + ri">
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_u || '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
                                                     <input
                                                         v-if="r.voceU"
@@ -407,10 +548,10 @@ async function generaPdf() {
                                                         min="0"
                                                         class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
                                                     />
-                                                    <span v-else>—</span>
+                                                    <span v-else></span>
                                                 </td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '—' }}</td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_e || '—' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_e || '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
                                                     <input
                                                         v-if="r.voceE"
@@ -420,9 +561,9 @@ async function generaPdf() {
                                                         min="0"
                                                         class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
                                                     />
-                                                    <span v-else>—</span>
+                                                    <span v-else></span>
                                                 </td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '—' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</td>
                                             </tr>
                                             <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">Totale</td>
@@ -435,22 +576,95 @@ async function generaPdf() {
                                             <tr v-if="blocco.mostra_avanzo">
                                                 <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">Avanzo/disavanzo attività {{ avanzoLabel(blocco.area) }}</td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ blocco.avanzo_t != null ? fmtNum(blocco.avanzo_t) : '—' }}</td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ blocco.avanzo_t1 != null ? fmtNum(blocco.avanzo_t1) : '—' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ blocco.avanzo_t != null ? fmtNum(blocco.avanzo_t) : '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ blocco.avanzo_t1 != null ? fmtNum(blocco.avanzo_t1) : '' }}</td>
                                             </tr>
                                         </template>
                                         <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                             <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
                                             <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">Totale entrate della gestione</td>
-                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(totaleEntrate) }}</td>
-                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">—</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(editTotaleEntrateAE) }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right"></td>
                                         </tr>
                                         <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                             <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">Totale uscite della gestione</td>
-                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(totaleUscite) }}</td>
-                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">—</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(editTotaleUsciteAE) }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right"></td>
                                             <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
                                         </tr>
+                                        <tr v-for="(rs, rsi) in editRigheDopoE" :key="'edopoe-' + rsi">
+                                            <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ rs.etichetta }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ rs.es_t != null ? fmtNum(rs.es_t) : '' }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right"></td>
+                                        </tr>
+                                        <template v-for="(blocco, bi) in editBlocchiInvestimenti" :key="'ebi-' + bi">
+                                            <tr>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ blocco.titolo_uscite || '' }}</td>
+                                                <td colspan="2" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ blocco.titolo_entrate || '' }}</td>
+                                                <td colspan="2" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
+                                            </tr>
+                                            <tr v-for="(r, ri) in blocco.righe" :key="'ebi-r-' + bi + '-' + ri">
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_u || '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
+                                                    <input
+                                                        v-if="r.voceU"
+                                                        v-model.number="r.voceU.importo"
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
+                                                    />
+                                                    <span v-else></span>
+                                                </td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_e || '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
+                                                    <input
+                                                        v-if="r.voceE"
+                                                        v-model.number="r.voceE.importo"
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
+                                                    />
+                                                    <span v-else></span>
+                                                </td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</td>
+                                            </tr>
+                                            <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">Totale</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(blocco.tot_u) }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(blocco.tot_u1) }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">Totale</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(blocco.tot_e) }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ fmtNum(blocco.tot_e1) }}</td>
+                                            </tr>
+                                        </template>
+                                        <tr v-for="(rs, rsi) in editRigheDopoInv" :key="'edopoinv-' + rsi">
+                                            <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ rs.etichetta }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ rs.es_t != null ? fmtNum(rs.es_t) : '' }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right"></td>
+                                        </tr>
+                                        <tr v-for="(rs, rsi) in editRigheBloccoImmagine" :key="'eimg-' + rsi">
+                                            <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 font-medium">{{ rs.etichetta }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ rs.es_t != null ? fmtNum(rs.es_t) : '' }}</td>
+                                            <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right"></td>
+                                        </tr>
+                                        <template v-if="contiSaldi.length">
+                                            <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
+                                                <td colspan="6" class="border border-gray-200 dark:border-gray-600 px-2 py-1">CASSA E BANCA</td>
+                                            </tr>
+                                            <tr v-for="(conto, ci) in contiSaldi" :key="'econto-' + ci">
+                                                <td colspan="3" class="border border-gray-200 dark:border-gray-600 px-2 py-1"></td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ conto.nome }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ conto.saldo_anno != null ? fmtNum(conto.saldo_anno) : '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ conto.saldo_anno_precedente != null ? fmtNum(conto.saldo_anno_precedente) : '' }}</td>
+                                            </tr>
+                                        </template>
                                     </tbody>
                                 </table>
                             </div>

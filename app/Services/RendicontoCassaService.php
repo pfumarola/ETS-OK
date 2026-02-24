@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Conto;
 use App\Models\PrimaNotaEntry;
 use Illuminate\Support\Facades\DB;
 
@@ -75,12 +76,57 @@ class RendicontoCassaService
 
         $risultatoPerCassa = round($totaleEntrate - $totaleUscite, 2);
 
+        $contiSaldi = $this->buildContiSaldi($anno);
+
         return [
             'anno' => $anno,
             'sezioni' => $sezioni,
             'totale_entrate' => round($totaleEntrate, 2),
             'totale_uscite' => round($totaleUscite, 2),
             'risultato_per_cassa' => $risultatoPerCassa,
+            'conti_saldi' => $contiSaldi,
         ];
+    }
+
+    /**
+     * Saldi per conto tesoreria (CASSA E BANCA): anno corrente e anno precedente.
+     * Restituisce array di ['nome' => string, 'tipo' => string, 'saldo_anno' => float, 'saldo_anno_precedente' => float].
+     */
+    public function buildContiSaldi(int $anno): array
+    {
+        $annoPrec = $anno - 1;
+        $from = "{$anno}-01-01";
+        $to = "{$anno}-12-31";
+        $from1 = "{$annoPrec}-01-01";
+        $to1 = "{$annoPrec}-12-31";
+
+        $saldiAnno = PrimaNotaEntry::query()
+            ->whereDate('date', '>=', $from)
+            ->whereDate('date', '<=', $to)
+            ->select('conto_id', DB::raw('SUM(amount) as saldo'))
+            ->groupBy('conto_id')
+            ->pluck('saldo', 'conto_id');
+
+        $saldiAnnoPrec = [];
+        if ($annoPrec >= 2000 && $annoPrec <= 2100) {
+            $saldiAnnoPrec = PrimaNotaEntry::query()
+                ->whereDate('date', '>=', $from1)
+                ->whereDate('date', '<=', $to1)
+                ->select('conto_id', DB::raw('SUM(amount) as saldo'))
+                ->groupBy('conto_id')
+                ->pluck('saldo', 'conto_id');
+        }
+
+        $conti = Conto::attivi()->ordered()->get(['id', 'name', 'type']);
+        $out = [];
+        foreach ($conti as $c) {
+            $out[] = [
+                'nome' => $c->name,
+                'tipo' => $c->type,
+                'saldo_anno' => round((float) ($saldiAnno[$c->id] ?? 0), 2),
+                'saldo_anno_precedente' => round((float) ($saldiAnnoPrec[$c->id] ?? 0), 2),
+            ];
+        }
+        return $out;
     }
 }
