@@ -34,7 +34,7 @@ const props = defineProps({
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="(m, index) in members.data" :key="m.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ index + 1 }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">{{ m.numero_tessera ?? '—' }}</td>
                                 <td class="px-4 py-2">
                                     <Link :href="route('members.show', m.id)" class="text-indigo-600 dark:text-indigo-400 hover:underline">{{ m.cognome }}</Link>
                                 </td>
