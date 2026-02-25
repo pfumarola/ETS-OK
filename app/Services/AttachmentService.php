@@ -20,17 +20,17 @@ class AttachmentService
 
     /**
      * Salva un file e crea il record Attachment collegato a un modello.
-     * Path: media/allegati/{context}/{year}/{month}/{uuid}_{slug}.{ext}
+     * Path: media/allegati/{context}/{year}/{month}/{slug}-{timestamp}.{ext}
      */
     public function store(UploadedFile $file, Model $attachable, ?string $tag = null): Attachment
     {
         $context = $this->contextForModel($attachable);
         $year = now()->format('Y');
         $month = now()->format('m');
-        $uuid = Str::uuid()->toString();
         $slug = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'file';
         $ext = $file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'bin';
-        $filename = $uuid . '_' . $slug . '.' . $ext;
+        $timestamp = (string) ((int) (microtime(true) * 1000));
+        $filename = $slug . '-' . $timestamp . '.' . $ext;
         $dir = self::MEDIA_ROOT . '/' . $context . '/' . $year . '/' . $month;
         if (! Storage::disk(self::DISK)->exists($dir)) {
             Storage::disk(self::DISK)->makeDirectory($dir);
@@ -54,17 +54,17 @@ class AttachmentService
 
     /**
      * Salva un allegato per "setting" (attachable_type=setting, attachable_id null).
-     * Path: media/allegati/impostazioni/{year}/{month}/...
+     * Path: media/allegati/impostazioni/{year}/{month}/{slug}-{timestamp}.{ext}
      */
     public function storeForSetting(UploadedFile $file, string $tag): Attachment
     {
         $context = 'impostazioni';
         $year = now()->format('Y');
         $month = now()->format('m');
-        $uuid = Str::uuid()->toString();
         $slug = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) ?: 'file';
         $ext = $file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'png';
-        $filename = $uuid . '_' . $slug . '.' . $ext;
+        $timestamp = (string) ((int) (microtime(true) * 1000));
+        $filename = $slug . '-' . $timestamp . '.' . $ext;
         $dir = self::MEDIA_ROOT . '/' . $context . '/' . $year . '/' . $month;
         if (! Storage::disk(self::DISK)->exists($dir)) {
             Storage::disk(self::DISK)->makeDirectory($dir);

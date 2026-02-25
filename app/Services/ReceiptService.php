@@ -179,7 +179,7 @@ class ReceiptService
         $year = date('Y', strtotime($issuedAt));
         $dir = "media/ricevute/{$year}";
         Storage::disk('local')->makeDirectory($dir);
-        $path = "{$dir}/{$receipt->id}.pdf";
+        $path = "{$dir}/{$receipt->id}-{$year}.pdf";
         Storage::disk('local')->put($path, $pdf->output());
         return $path;
     }

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { FolderIcon, DocumentIcon, ArrowDownTrayIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
+import { FolderIcon, DocumentIcon, ArrowDownTrayIcon, DocumentTextIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/vue/24/outline';
 import { Head, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -11,6 +11,7 @@ const props = defineProps({
 });
 
 const selected = ref(null);
+const viewMode = ref('grid'); // 'grid' = icone, 'list' = elenco
 
 const PREVIEW_IMAGE_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
 const PREVIEW_PDF_EXT = ['pdf'];
@@ -69,20 +70,48 @@ function closePreview() {
         <Head title="File" />
         <template #header>
             <div class="flex flex-col gap-2">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">File</h2>
-                <nav class="flex flex-wrap items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
-                    <template v-for="(crumb, i) in breadcrumb" :key="crumb.path">
-                        <span v-if="i > 0" class="text-gray-400 dark:text-gray-500"> &gt; </span>
-                        <Link
-                            v-if="i < breadcrumb.length - 1"
-                            :href="route('file.index', crumb.path ? { path: crumb.path } : {})"
-                            class="text-indigo-600 dark:text-indigo-400 hover:underline"
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">File</h2>
+                        <nav class="flex flex-wrap items-center gap-1 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            <template v-for="(crumb, i) in breadcrumb" :key="crumb.path">
+                                <span v-if="i > 0" class="text-gray-400 dark:text-gray-500"> &gt; </span>
+                                <Link
+                                    v-if="i < breadcrumb.length - 1"
+                                    :href="route('file.index', crumb.path ? { path: crumb.path } : {})"
+                                    class="text-indigo-600 dark:text-indigo-400 hover:underline"
+                                >
+                                    {{ crumb.label }}
+                                </Link>
+                                <span v-else class="text-gray-800 dark:text-gray-200 font-medium">{{ crumb.label }}</span>
+                            </template>
+                        </nav>
+                    </div>
+                    <div class="flex rounded-lg border border-gray-200 dark:border-gray-600 p-0.5 bg-gray-100 dark:bg-gray-800">
+                        <button
+                            type="button"
+                            :class="viewMode === 'grid'
+                                ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'"
+                            class="p-2 rounded-md transition"
+                            title="Visualizzazione icone"
+                            @click="viewMode = 'grid'"
                         >
-                            {{ crumb.label }}
-                        </Link>
-                        <span v-else class="text-gray-800 dark:text-gray-200 font-medium">{{ crumb.label }}</span>
-                    </template>
-                </nav>
+                            <Squares2X2Icon class="size-5" aria-hidden="true" />
+                        </button>
+                        <button
+                            type="button"
+                            :class="viewMode === 'list'
+                                ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'"
+                            class="p-2 rounded-md transition"
+                            title="Visualizzazione elenco"
+                            @click="viewMode = 'list'"
+                        >
+                            <ListBulletIcon class="size-5" aria-hidden="true" />
+                        </button>
+                    </div>
+                </div>
             </div>
         </template>
 
@@ -90,7 +119,8 @@ function closePreview() {
             <!-- Pannello sinistro: griglia file e cartelle -->
             <div class="flex flex-col min-w-0 flex-1 lg:flex-initial lg:w-1/2 lg:max-w-[50%] lg:pr-4">
                 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto flex-1 min-h-[280px]">
-                    <div class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3">
+                    <!-- Modalità icone (griglia) -->
+                    <div v-if="viewMode === 'grid'" class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3">
                         <template v-for="item in sortedItems" :key="item.path">
                             <Link
                                 v-if="item.type === 'folder'"
@@ -112,6 +142,40 @@ function closePreview() {
                                 <DocumentIcon class="size-12 text-gray-400 dark:text-gray-500 mb-2 shrink-0" aria-hidden="true" />
                                 <span class="text-sm font-medium text-gray-800 dark:text-gray-200 text-center truncate w-full">{{ item.name }}</span>
                                 <span class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ formatSize(item.size) }}</span>
+                            </button>
+                        </template>
+                    </div>
+                    <!-- Modalità elenco -->
+                    <div v-else class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <template v-for="item in sortedItems" :key="item.path">
+                            <Link
+                                v-if="item.type === 'folder'"
+                                :href="route('file.index', { path: item.path })"
+                                class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+                            >
+                                <FolderIcon class="size-8 shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
+                                <span class="font-medium text-gray-800 dark:text-gray-200 truncate">{{ item.name }}</span>
+                            </Link>
+                            <button
+                                v-else
+                                type="button"
+                                class="w-full flex items-center gap-3 px-4 py-3 text-left transition"
+                                :class="selected?.path === item.path
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20'
+                                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'"
+                                @click="selectFile(item)"
+                            >
+                                <DocumentIcon class="size-8 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                                <span class="flex-1 font-medium text-gray-800 dark:text-gray-200 truncate min-w-0">{{ item.name }}</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400 shrink-0">{{ formatSize(item.size) }}</span>
+                                <a
+                                    :href="downloadUrl(item)"
+                                    class="shrink-0 p-1.5 rounded text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                                    title="Scarica"
+                                    @click.stop
+                                >
+                                    <ArrowDownTrayIcon class="size-4" aria-hidden="true" />
+                                </a>
                             </button>
                         </template>
                     </div>

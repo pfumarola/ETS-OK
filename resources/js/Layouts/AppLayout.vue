@@ -59,7 +59,7 @@ function sectionForRoute(name) {
     if (!name) return null;
     if (name.startsWith('members.') || name.startsWith('libro-soci.') || name.startsWith('member-types.')) return 'soci';
     if (name.startsWith('incassi.') || name.startsWith('quote-sociali.') || name.startsWith('donazioni.') || name.startsWith('receipts.') || name.startsWith('expense-refunds.')) return 'cassa';
-    if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.') || name.startsWith('email-templates.') || name.startsWith('file.')) return 'documenti';
+    if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.') || name.startsWith('email-templates.')) return 'documenti';
     if (name.startsWith('organi.') || name.startsWith('elezioni.')) return 'organiVotazioni';
     if (name.startsWith('events.') || name.startsWith('properties.') || name.startsWith('items.') || name.startsWith('locations.') || name.startsWith('warehouses.')) return 'patrimonio';
     if (name.startsWith('conti.') || name.startsWith('prima-nota.') || name === 'reports.accounting' || name === 'reports.rendiconto-cassa') return 'contabilita';
@@ -252,12 +252,12 @@ const logout = () => {
                                     <EnvelopeIcon class="size-4 shrink-0" aria-hidden="true" />
                                     Template email
                                 </ResponsiveNavLink>
-                                <ResponsiveNavLink :href="route('file.index')" :active="route().current('file.*')">
-                                    <FolderIcon class="size-4 shrink-0" aria-hidden="true" />
-                                    File
-                                </ResponsiveNavLink>
                             </div>
                         </div>
+                        <ResponsiveNavLink v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')" :href="route('file.index')" :active="route().current('file.*')" class="pt-2">
+                            <FolderIcon class="size-5 shrink-0" aria-hidden="true" />
+                            File
+                        </ResponsiveNavLink>
                         <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')" class="pt-2">
                             <button type="button" class="block w-full inline-flex items-center gap-2 ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 dark:text-gray-400" @click="toggleSection('organiVotazioni')">
                                 <UserGroupIcon class="size-5 shrink-0" aria-hidden="true" />
@@ -441,12 +441,13 @@ const logout = () => {
                                             <EnvelopeIcon class="size-4 shrink-0" aria-hidden="true" />
                                             Template email
                                         </NavLink>
-                                        <NavLink :href="route('file.index')" :active="route().current('file.*')">
-                                            <FolderIcon class="size-4 shrink-0" aria-hidden="true" />
-                                            File
-                                        </NavLink>
                                     </div>
                                 </div>
+                                <!-- File (voce a sé stante) -->
+                                <NavLink :href="route('file.index')" :active="route().current('file.*')" class="mt-2">
+                                    <FolderIcon class="size-5 shrink-0" aria-hidden="true" />
+                                    File
+                                </NavLink>
                                 <!-- Organi e votazioni -->
                                 <div v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')" class="mt-2">
                                     <button type="button" class="block w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border-l-4 border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50" @click="toggleSection('organiVotazioni')">
