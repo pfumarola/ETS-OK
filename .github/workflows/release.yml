@@ -63,6 +63,14 @@ jobs:
           php artisan config:clear
           php artisan route:clear
 
+      - name: Prepare storage and bootstrap cache dirs for zip
+        run: |
+          mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views bootstrap/cache
+          touch storage/framework/cache/.gitkeep storage/framework/cache/data/.gitkeep storage/framework/sessions/.gitkeep storage/framework/views/.gitkeep bootstrap/cache/.gitkeep
+          find storage/framework/views -type f ! -name .gitkeep -delete
+          find storage/framework/sessions -type f ! -name .gitkeep -delete
+          find storage/framework/cache/data -type f ! -name .gitkeep -delete
+
       - name: Create release zip
         env:
           VERSION: ${{ steps.env-example.outputs.version }}
@@ -93,9 +101,6 @@ jobs:
             -x "storage/*.key" \
             -x "storage/pail/*" \
             -x "storage/logs/*" \
-            -x "storage/framework/cache/*" \
-            -x "storage/framework/sessions/*" \
-            -x "storage/framework/views/*" \
             -x "phpunit.xml" \
             -x "phpunit.xml.dist"
 
@@ -109,7 +114,8 @@ jobs:
 
             **Installazione:**
             1. Estrai l'archivio nella root del sito (document root deve puntare alla cartella `public`).
-            2. Visita `/install` per configurare il database e creare l'utente amministratore.
+            2. Assicurati che `storage` e `bootstrap/cache` siano scrivibili dal web server (es. `chmod -R 775 storage bootstrap/cache` e proprietario corretto).
+            3. Visita `/install` per configurare il database e creare l'utente amministratore.
           files: ets-ok-${{ steps.env-example.outputs.version }}.zip
           replace: true
         env:
