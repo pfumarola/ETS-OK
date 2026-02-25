@@ -114,7 +114,7 @@ Gestionale per **Ente del Terzo Settore (ETS)**. Gestisce:
 ## 7. Servizi e funzionalità speciali
 
 - **Services**:  
-  - `app/Services/AttachmentService.php` – salvataggio allegati (path `media/attachments/{context}/...`, record `Attachment`)  
+  - `app/Services/AttachmentService.php` – salvataggio allegati (path `media/allegati/{context}/...`, record `Attachment`)  
   - `app/Services/PlaceholderResolver.php` – sostituzione placeholder `{{key}}` e `{{ora+30m}}` nel contenuto di verbali/documenti al salvataggio. Placeholder: `nome-associazione`, `data`, `ora`, `ora+30m`/`ora+1h20m` (offset), `n-soci`, `anno`/`anno+1` (offset anni), `presidente`, `segretario`, `tesoriere`, `sede`, `sede-legale`, `sede-operativa` (da Location per tipo), `direttivo`, `richieste-soci`. I template non vengono risolti.  
   - `app/Services/ReceiptService.php` – gestione ricevute  
   - `app/Services/RendicontoCassaService.php` – rendiconto di cassa (legge prima nota per `rendiconto_code`, struttura da schema MOD_D)  

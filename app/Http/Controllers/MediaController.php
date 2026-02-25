@@ -1,0 +1,123 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+
+/**
+ * File manager in sola lettura per storage/app/private/media.
+ * Nomi cartelle e file = nomi reali sul filesystem (nessuna traduzione a runtime).
+ */
+class MediaController extends Controller
+{
+    private const MEDIA_BASE = 'media';
+
+    public function __construct()
+    {
+        $this->middleware('role:admin,segreteria');
+    }
+
+    /**
+     * Normalizza e valida il path relativo sotto media (no .., no path assoluti).
+     */
+    private function normalizePath(?string $path): string
+    {
+        if ($path === null || $path === '') {
+            return '';
+        }
+        $path = str_replace('\\', '/', trim($path));
+        if (str_contains($path, '..')) {
+            abort(400, 'Path non valido.');
+        }
+        $segments = array_filter(explode('/', $path), fn ($s) => $s !== '');
+        return implode('/', $segments);
+    }
+
+    /**
+     * Elenco cartelle e file nella directory media (o sottopath).
+     */
+    public function index(Request $request)
+    {
+        $currentPath = $this->normalizePath($request->input('path'));
+        $dir = $currentPath === '' ? self::MEDIA_BASE : self::MEDIA_BASE . '/' . $currentPath;
+
+        if (! Storage::disk('local')->exists($dir)) {
+            abort(404, 'Cartella non trovata.');
+        }
+        if (! Storage::disk('local')->directoryExists($dir)) {
+            abort(400, 'Il path non è una cartella.');
+        }
+
+        $items = [];
+        $disk = Storage::disk('local');
+
+        foreach ($disk->directories($dir) as $fullPath) {
+            $name = basename($fullPath);
+            $relativePath = $currentPath === '' ? $name : $currentPath . '/' . $name;
+            $items[] = [
+                'type' => 'folder',
+                'name' => $name,
+                'path' => $relativePath,
+            ];
+        }
+
+        foreach ($disk->files($dir) as $fullPath) {
+            $name = basename($fullPath);
+            $relativePath = $currentPath === '' ? $name : $currentPath . '/' . $name;
+            $size = null;
+            try {
+                $size = $disk->size($fullPath);
+            } catch (\Throwable) {
+                // ignora errori di size
+            }
+            $items[] = [
+                'type' => 'file',
+                'name' => $name,
+                'path' => $relativePath,
+                'size' => $size,
+            ];
+        }
+
+        // Breadcrumb: root "Media" + segmenti con nome reale (cartella sul disco)
+        $breadcrumb = [['path' => '', 'label' => 'Media']];
+        if ($currentPath !== '') {
+            $segments = explode('/', $currentPath);
+            $acc = '';
+            foreach ($segments as $segment) {
+                $acc = $acc === '' ? $segment : $acc . '/' . $segment;
+                $breadcrumb[] = ['path' => $acc, 'label' => $segment];
+            }
+        }
+
+        return Inertia::render('Media/Index', [
+            'items' => $items,
+            'breadcrumb' => $breadcrumb,
+            'currentPath' => $currentPath,
+        ]);
+    }
+
+    /**
+     * Download di un file sotto media.
+     */
+    public function download(Request $request)
+    {
+        $path = $this->normalizePath($request->input('path'));
+        if ($path === '') {
+            abort(400, 'Path file obbligatorio.');
+        }
+        $fullPath = self::MEDIA_BASE . '/' . $path;
+
+        if (! Storage::disk('local')->exists($fullPath)) {
+            abort(404, 'File non trovato.');
+        }
+        if (Storage::disk('local')->directoryExists($fullPath)) {
+            abort(400, 'Il download è consentito solo per i file.');
+        }
+
+        $filename = basename($path);
+
+        return Storage::disk('local')->download($fullPath, $filename);
+    }
+}

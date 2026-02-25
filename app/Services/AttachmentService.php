@@ -9,18 +9,18 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * Servizio centralizzato per salvare allegati sotto media/attachments/{context}/...
+ * Servizio centralizzato per salvare allegati sotto media/allegati/{context}/...
  * Path univoco e adatto a backup/export.
  */
 class AttachmentService
 {
-    private const MEDIA_ROOT = 'media/attachments';
+    private const MEDIA_ROOT = 'media/allegati';
 
     private const DISK = 'local';
 
     /**
      * Salva un file e crea il record Attachment collegato a un modello.
-     * Path: media/attachments/{context}/{year}/{month}/{uuid}_{slug}.{ext}
+     * Path: media/allegati/{context}/{year}/{month}/{uuid}_{slug}.{ext}
      */
     public function store(UploadedFile $file, Model $attachable, ?string $tag = null): Attachment
     {
@@ -54,11 +54,11 @@ class AttachmentService
 
     /**
      * Salva un allegato per "setting" (attachable_type=setting, attachable_id null).
-     * Path: media/attachments/settings/{year}/{month}/...
+     * Path: media/allegati/impostazioni/{year}/{month}/...
      */
     public function storeForSetting(UploadedFile $file, string $tag): Attachment
     {
-        $context = 'settings';
+        $context = 'impostazioni';
         $year = now()->format('Y');
         $month = now()->format('m');
         $uuid = Str::uuid()->toString();
@@ -88,6 +88,12 @@ class AttachmentService
 
     private function contextForModel(Model $model): string
     {
-        return Str::snake(Str::plural(class_basename($model)));
+        $context = Str::snake(Str::plural(class_basename($model)));
+        return self::CONTEXT_ITALIAN[$context] ?? $context;
     }
+
+    /** Mappatura context (cartelle sotto media/allegati) in italiano. */
+    private const CONTEXT_ITALIAN = [
+        'documents' => 'documenti',
+    ];
 }

@@ -177,7 +177,7 @@ class ReceiptService
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($template, $viewData);
         $year = date('Y', strtotime($issuedAt));
-        $dir = "media/receipts/{$year}";
+        $dir = "media/ricevute/{$year}";
         Storage::disk('local')->makeDirectory($dir);
         $path = "{$dir}/{$receipt->id}.pdf";
         Storage::disk('local')->put($path, $pdf->output());

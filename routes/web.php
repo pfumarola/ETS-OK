@@ -28,6 +28,7 @@ use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerbaleController;
 use App\Http\Controllers\EmailTemplateController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\WarehouseController;
 use Illuminate\Support\Facades\Route;
@@ -124,6 +125,10 @@ Route::middleware([
     Route::post('settings/test-email', [SettingsController::class, 'sendTestEmail'])->name('settings.test-email');
     Route::get('settings/letterhead-preview', [SettingsController::class, 'letterheadPreview'])->name('settings.letterhead-preview');
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
+
+    // Media (file manager in sola lettura)
+    Route::get('media', [MediaController::class, 'index'])->name('media.index')->middleware('role:admin,segreteria');
+    Route::get('media/download', [MediaController::class, 'download'])->name('media.download')->middleware('role:admin,segreteria');
 
     // Quote sociali e erogazioni liberali (pagine distinte); create/show condivisi
     Route::get('quote-sociali', [IncassoController::class, 'indexQuote'])->name('quote-sociali.index');
