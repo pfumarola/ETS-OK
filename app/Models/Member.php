@@ -24,6 +24,7 @@ class Member extends Model
         'cognome',
         'email',
         'codice_fiscale',
+        'data_nascita',
         'data_iscrizione',
         'stato',
         'indirizzo',
@@ -55,6 +56,7 @@ class Member extends Model
     {
         return [
             'numero_tessera' => 'integer',
+            'data_nascita' => 'date',
             'data_iscrizione' => 'date',
             'domanda_presentata_at' => 'date',
             'ammissione_decisa_at' => 'date',

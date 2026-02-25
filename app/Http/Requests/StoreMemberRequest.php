@@ -27,6 +27,7 @@ class StoreMemberRequest extends FormRequest
             'cognome' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'codice_fiscale' => 'nullable|string|max:64',
+            'data_nascita' => 'nullable|date',
             'data_iscrizione' => 'nullable|date',
             'stato' => 'nullable|in:attivo,sospeso,cessato,aspirante',
             'presentare_domanda' => 'nullable|boolean',

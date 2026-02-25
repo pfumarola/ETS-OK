@@ -33,6 +33,7 @@ const form = useForm({
     cognome: '',
     email: props.email,
     codice_fiscale: '',
+    data_nascita: '',
     indirizzo: '',
     telefono: '',
     note: '',
@@ -109,6 +110,11 @@ const form = useForm({
                     <InputLabel for="codice_fiscale" value="Codice fiscale" />
                     <TextInput id="codice_fiscale" v-model="form.codice_fiscale" class="mt-1 block w-full" maxlength="64" />
                     <InputError class="mt-1" :message="form.errors.codice_fiscale" />
+                </div>
+                <div>
+                    <InputLabel for="data_nascita" value="Data di nascita" />
+                    <TextInput id="data_nascita" v-model="form.data_nascita" type="date" class="mt-1 block w-full" />
+                    <InputError class="mt-1" :message="form.errors.data_nascita" />
                 </div>
                 <div>
                     <InputLabel for="indirizzo" value="Indirizzo" />

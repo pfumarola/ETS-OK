@@ -28,6 +28,7 @@ class UpdateMemberRequest extends FormRequest
                 'cognome' => 'required|string|max:255',
                 'email' => 'nullable|email|max:255',
                 'codice_fiscale' => 'nullable|string|max:64',
+                'data_nascita' => 'nullable|date',
                 'data_iscrizione' => 'nullable|date',
                 'stato' => 'nullable|in:attivo,sospeso,cessato,aspirante,rigettato,in_ricorso,decesso,dimesso,escluso,moroso',
                 'domanda_presentata_at' => 'nullable|date',
@@ -53,6 +54,7 @@ class UpdateMemberRequest extends FormRequest
             'nome' => 'required|string|max:255',
             'cognome' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
+            'data_nascita' => 'nullable|date',
             'indirizzo' => 'nullable|string|max:255',
             'telefono' => 'nullable|string|max:50',
         ];

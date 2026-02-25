@@ -184,19 +184,7 @@ class VerbaleController extends Controller
 
         $validated = $request->validate([
             'tipo' => 'required|in:consiglio_direttivo,assemblea',
-            'data' => [
-                'required',
-                'date',
-                function (string $attribute, mixed $value, \Closure $fail) use ($request, $verbale): void {
-                    $exists = Verbale::where('tipo', $request->input('tipo'))
-                        ->where('data', '>', $value)
-                        ->where('id', '!=', $verbale->id)
-                        ->exists();
-                    if ($exists) {
-                        $fail('Esiste già un verbale di questo tipo con data successiva. Non è possibile impostare una data precedente.');
-                    }
-                },
-            ],
+            'data' => 'required|date',
             'anno' => 'required|integer|min:2000|max:2100',
             'titolo' => 'required|string|max:255',
             'contenuto' => 'nullable|string',

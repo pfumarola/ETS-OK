@@ -21,6 +21,7 @@ const formFull = useForm({
     cognome: props.member.cognome,
     email: props.member.email ?? '',
     codice_fiscale: props.member.codice_fiscale ?? '',
+    data_nascita: props.member.data_nascita ? props.member.data_nascita.slice(0, 10) : '',
     data_iscrizione: props.member.data_iscrizione ? props.member.data_iscrizione.slice(0, 10) : '',
     stato: props.member.stato ?? 'attivo',
     indirizzo: props.member.indirizzo ?? '',
@@ -32,6 +33,7 @@ const formSocio = useForm({
     nome: props.member.nome,
     cognome: props.member.cognome,
     email: props.member.email ?? '',
+    data_nascita: props.member.data_nascita ? props.member.data_nascita.slice(0, 10) : '',
     indirizzo: props.member.indirizzo ?? '',
     telefono: props.member.telefono ?? '',
 });
@@ -66,6 +68,11 @@ const formSocio = useForm({
                     <InputLabel for="socio_email" value="Email (anagrafica socio)" />
                     <TextInput id="socio_email" v-model="formSocio.email" type="email" class="mt-1 block w-full" />
                     <InputError class="mt-1" :message="formSocio.errors.email" />
+                </div>
+                <div>
+                    <InputLabel for="socio_data_nascita" value="Data di nascita" />
+                    <TextInput id="socio_data_nascita" v-model="formSocio.data_nascita" type="date" class="mt-1 block w-full" />
+                    <InputError class="mt-1" :message="formSocio.errors.data_nascita" />
                 </div>
                 <div>
                     <InputLabel for="socio_indirizzo" value="Indirizzo" />
@@ -118,6 +125,11 @@ const formSocio = useForm({
                     <InputLabel for="codice_fiscale" value="Codice fiscale" />
                     <TextInput id="codice_fiscale" v-model="formFull.codice_fiscale" class="mt-1 block w-full" maxlength="64" />
                     <InputError class="mt-1" :message="formFull.errors.codice_fiscale" />
+                </div>
+                <div>
+                    <InputLabel for="data_nascita" value="Data di nascita" />
+                    <TextInput id="data_nascita" v-model="formFull.data_nascita" type="date" class="mt-1 block w-full" />
+                    <InputError class="mt-1" :message="formFull.errors.data_nascita" />
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>

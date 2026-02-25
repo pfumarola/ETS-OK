@@ -80,14 +80,10 @@ const attachmentError = computed(() => {
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div><dt class="text-gray-500 dark:text-gray-400">Stato</dt><dd><span class="px-2 py-0.5 rounded text-xs font-medium" :class="verbale.stato === 'confermato' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'">{{ verbale.stato === 'confermato' ? 'Confermato' : 'Bozza' }}</span></dd></div>
-                    <dt class="text-gray-500 dark:text-gray-400">Data</dt>
-                    <dd>{{ verbale.data ? new Date(verbale.data).toLocaleDateString('it-IT') : '—' }}</dd>
-                    <dt class="text-gray-500 dark:text-gray-400">Tipo</dt>
-                    <dd>{{ verbale.tipo_label || verbale.tipo }}</dd>
-                    <dt class="text-gray-500 dark:text-gray-400">Titolo</dt>
-                    <dd class="font-medium">{{ verbale.titolo }}</dd>
-                    <dt v-if="verbale.numero != null" class="text-gray-500 dark:text-gray-400">Numero</dt>
-                    <dd v-if="verbale.numero != null">n. {{ verbale.numero }}{{ verbale.anno ? ` / ${verbale.anno}` : '' }}</dd>
+                    <div><dt class="text-gray-500 dark:text-gray-400">Data</dt><dd>{{ verbale.data ? new Date(verbale.data).toLocaleDateString('it-IT') : '—' }}</dd></div>
+                    <div><dt class="text-gray-500 dark:text-gray-400">Tipo</dt><dd>{{ verbale.tipo_label || verbale.tipo }}</dd></div>
+                    <div><dt class="text-gray-500 dark:text-gray-400">Titolo</dt><dd class="font-medium">{{ verbale.titolo }}</dd></div>
+                    <div v-if="verbale.numero != null"><dt class="text-gray-500 dark:text-gray-400">Numero</dt><dd>n. {{ verbale.numero }}{{ verbale.anno ? ` / ${verbale.anno}` : '' }}</dd></div>
                 </dl>
                 <div v-if="verbale.contenuto" class="pt-4 border-t border-gray-200 dark:border-gray-600">
                     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contenuto</h3>
