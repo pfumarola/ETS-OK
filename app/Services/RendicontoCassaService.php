@@ -89,29 +89,29 @@ class RendicontoCassaService
     }
 
     /**
-     * Saldi per conto tesoreria (CASSA E BANCA): anno corrente e anno precedente.
+     * Saldi per conto tesoreria (CASSA E BANCA): saldi di chiusura al 31/12 (Mod. D, Nota 10358/2022).
+     * - saldo_anno_precedente = consistenze liquide al 31/12 dell'anno (t-1), pari al saldo iniziale dell'anno corrente.
+     * - saldo_anno = consistenze liquide al 31/12 dell'anno (t).
      * Restituisce array di ['nome' => string, 'tipo' => string, 'saldo_anno' => float, 'saldo_anno_precedente' => float].
      */
     public function buildContiSaldi(int $anno): array
     {
         $annoPrec = $anno - 1;
-        $from = "{$anno}-01-01";
         $to = "{$anno}-12-31";
-        $from1 = "{$annoPrec}-01-01";
-        $to1 = "{$annoPrec}-12-31";
+        $toPrec = "{$annoPrec}-12-31";
 
+        // Saldo di chiusura al 31/12 dell'anno corrente (tutti i movimenti fino a quella data)
         $saldiAnno = PrimaNotaEntry::query()
-            ->whereDate('date', '>=', $from)
             ->whereDate('date', '<=', $to)
             ->select('conto_id', DB::raw('SUM(amount) as saldo'))
             ->groupBy('conto_id')
             ->pluck('saldo', 'conto_id');
 
+        // Saldo di chiusura al 31/12 dell'anno precedente = saldo iniziale anno corrente
         $saldiAnnoPrec = [];
         if ($annoPrec >= 2000 && $annoPrec <= 2100) {
             $saldiAnnoPrec = PrimaNotaEntry::query()
-                ->whereDate('date', '>=', $from1)
-                ->whereDate('date', '<=', $to1)
+                ->whereDate('date', '<=', $toPrec)
                 ->select('conto_id', DB::raw('SUM(amount) as saldo'))
                 ->groupBy('conto_id')
                 ->pluck('saldo', 'conto_id');
