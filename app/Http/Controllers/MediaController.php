@@ -44,7 +44,11 @@ class MediaController extends Controller
         $dir = $currentPath === '' ? self::MEDIA_BASE : self::MEDIA_BASE . '/' . $currentPath;
 
         if (! Storage::disk('local')->exists($dir)) {
-            abort(404, 'Cartella non trovata.');
+            if ($currentPath === '') {
+                Storage::disk('local')->makeDirectory(self::MEDIA_BASE);
+            } else {
+                abort(404, 'Cartella non trovata.');
+            }
         }
         if (! Storage::disk('local')->directoryExists($dir)) {
             abort(400, 'Il path non è una cartella.');

@@ -9,6 +9,29 @@ import InputLabel from '@/Components/InputLabel.vue';
 const props = defineProps({ organo: Object, members: { type: Array, default: () => [] } });
 const showAssignForCaricaId = ref(null);
 const formIncarico = useForm({ member_id: '' });
+const editingDurata = ref(false);
+const formOrgano = useForm({
+    durata_mesi: props.organo.durata_mesi ?? '',
+    richiedi_elezioni_fine_mandato: !!props.organo.richiedi_elezioni_fine_mandato,
+});
+
+function avviaModificaDurata() {
+    formOrgano.durata_mesi = props.organo.durata_mesi ?? '';
+    formOrgano.richiedi_elezioni_fine_mandato = !!props.organo.richiedi_elezioni_fine_mandato;
+    formOrgano.clearErrors();
+    editingDurata.value = true;
+}
+
+function annullaModificaDurata() {
+    editingDurata.value = false;
+}
+
+function salvaDurata() {
+    formOrgano.put(route('organi.update', props.organo.slug), {
+        preserveScroll: true,
+        onSuccess: () => { editingDurata.value = false; },
+    });
+}
 
 /** Soci ancora non assegnati a questa carica (per evitare doppi incarichi). */
 function membersDisponibiliPerCarica(carica) {
@@ -69,8 +92,28 @@ function rimuoviIncarico(incarico) {
 
         <div class="py-6 max-w-4xl mx-auto sm:px-6 space-y-6">
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Dettagli</h3>
-                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">Dettagli</h3>
+                    <button v-if="!editingDurata" type="button" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline" @click="avviaModificaDurata">Modifica durata</button>
+                </div>
+                <template v-if="editingDurata">
+                    <form @submit.prevent="salvaDurata" class="space-y-4">
+                        <div>
+                            <InputLabel for="durata_mesi" value="Durata (mesi)" />
+                            <input id="durata_mesi" v-model.number="formOrgano.durata_mesi" type="number" min="1" max="120" placeholder="es. 36" class="mt-1 block w-full max-w-xs rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                            <InputError :message="formOrgano.errors.durata_mesi" />
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input id="richiedi_elezioni" v-model="formOrgano.richiedi_elezioni_fine_mandato" type="checkbox" class="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500" />
+                            <InputLabel for="richiedi_elezioni" value="Richiedi elezioni a fine mandato" class="mb-0" />
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" :disabled="formOrgano.processing">Salva</button>
+                            <button type="button" class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:underline" :disabled="formOrgano.processing" @click="annullaModificaDurata">Annulla</button>
+                        </div>
+                    </form>
+                </template>
+                <dl v-else class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div><dt class="text-sm text-gray-500 dark:text-gray-400">Durata</dt><dd>{{ organo.durata_mesi ? organo.durata_mesi + ' mesi' : '—' }}</dd></div>
                     <div><dt class="text-sm text-gray-500 dark:text-gray-400">Elezione fine mandato</dt><dd>{{ organo.richiedi_elezioni_fine_mandato ? 'Sì' : 'No' }}</dd></div>
                     <div><dt class="text-sm text-gray-500 dark:text-gray-400">Mandato da</dt><dd>{{ organo.mandato_da ? new Date(organo.mandato_da).toLocaleDateString('it-IT') : '—' }}</dd></div>

@@ -9,8 +9,8 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeder usato dall'installer web: ruoli, tipi socio, conto Cassa contanti,
- * impostazioni default e un solo utente admin con i dati passati da config.
+ * Seeder usato dall'installer web: ruoli, tipi socio, organi e cariche (da config),
+ * conto Cassa contanti, impostazioni default e un solo utente admin con i dati passati da config.
  */
 class InstallSeeder extends Seeder
 {
@@ -19,6 +19,7 @@ class InstallSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             MemberTypeSeeder::class,
+            OrganiHardcodedSeeder::class,
         ]);
 
         Settings::set('quota_annuale', 50);

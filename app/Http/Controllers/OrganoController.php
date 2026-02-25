@@ -33,4 +33,15 @@ class OrganoController extends Controller
 
         return Inertia::render('Organi/Show', ['organo' => $organo, 'members' => $members]);
     }
+
+    public function update(Request $request, Organo $organo)
+    {
+        $validated = $request->validate([
+            'durata_mesi' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'richiedi_elezioni_fine_mandato' => ['boolean'],
+        ]);
+        $organo->update($validated);
+
+        return redirect()->route('organi.show', $organo)->with('flash', ['type' => 'success', 'message' => 'Impostazioni aggiornate.']);
+    }
 }

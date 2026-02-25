@@ -99,6 +99,7 @@ Route::middleware([
     Route::resource('member-types', MemberTypeController::class)->except(['show']);
     Route::get('organi', [OrganoController::class, 'index'])->name('organi.index');
     Route::get('organi/{organo:slug}', [OrganoController::class, 'show'])->name('organi.show');
+    Route::put('organi/{organo:slug}', [OrganoController::class, 'update'])->name('organi.update');
     Route::middleware('role:admin,segreteria')->group(function () {
         Route::get('elezioni', [ElezioneController::class, 'index'])->name('elezioni.index');
         Route::get('elezioni/create', [ElezioneController::class, 'create'])->name('elezioni.create');

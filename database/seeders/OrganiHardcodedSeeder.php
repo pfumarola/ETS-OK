@@ -15,6 +15,8 @@ class OrganiHardcodedSeeder extends Seeder
         foreach ($organi as $item) {
             $slug = $item['slug'] ?? null;
             $nome = $item['nome'] ?? '';
+            $durataMesi = isset($item['durata_mesi']) ? (int) $item['durata_mesi'] : null;
+            $richiediElezione = (bool) ($item['richiedi_elezioni_fine_mandato'] ?? false);
             $cariche = $item['cariche'] ?? [];
 
             if ($slug === null || $nome === '') {
@@ -25,12 +27,26 @@ class OrganiHardcodedSeeder extends Seeder
             if (! $organo) {
                 $organo = Organo::where('nome', $nome)->first();
                 if ($organo) {
-                    $organo->update(['slug' => $slug]);
+                    $organo->update([
+                        'slug' => $slug,
+                        'nome' => $nome,
+                        'durata_mesi' => $durataMesi,
+                        'richiedi_elezioni_fine_mandato' => $richiediElezione,
+                    ]);
                 } else {
-                    $organo = Organo::create(['slug' => $slug, 'nome' => $nome]);
+                    $organo = Organo::create([
+                        'slug' => $slug,
+                        'nome' => $nome,
+                        'durata_mesi' => $durataMesi,
+                        'richiedi_elezioni_fine_mandato' => $richiediElezione,
+                    ]);
                 }
             } else {
-                $organo->update(['nome' => $nome]);
+                $organo->update([
+                    'nome' => $nome,
+                    'durata_mesi' => $durataMesi,
+                    'richiedi_elezioni_fine_mandato' => $richiediElezione,
+                ]);
             }
 
             foreach ($cariche as $c) {

@@ -16,6 +16,8 @@ return [
         [
             'slug' => 'consiglio_direttivo',
             'nome' => 'Consiglio direttivo',
+            'durata_mesi' => 36,
+            'richiedi_elezioni_fine_mandato' => true,
             'cariche' => [
                 ['nome' => 'Presidente', 'ordine' => 1, 'multiplo' => false],
                 ['nome' => 'Vicepresidente', 'ordine' => 2, 'multiplo' => false],
