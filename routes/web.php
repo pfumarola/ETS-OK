@@ -160,6 +160,7 @@ Route::middleware([
     Route::post('prima-nota/giroconto', [PrimaNotaController::class, 'storeGiroconto'])->name('prima-nota.giroconto.store');
     Route::get('prima-nota/{prima_nota_entry}/edit', [PrimaNotaController::class, 'edit'])->name('prima-nota.edit');
     Route::put('prima-nota/{prima_nota_entry}', [PrimaNotaController::class, 'update'])->name('prima-nota.update');
+    Route::delete('prima-nota/{prima_nota_entry}', [PrimaNotaController::class, 'destroy'])->name('prima-nota.destroy');
     Route::get('reports/accounting', [AccountingReportController::class, 'index'])->name('reports.accounting');
     Route::get('reports/accounting/export', [AccountingReportController::class, 'export'])->name('reports.accounting.export');
     Route::get('reports/rendiconto-cassa', [RendicontoCassaController::class, 'index'])->name('reports.rendiconto-cassa');

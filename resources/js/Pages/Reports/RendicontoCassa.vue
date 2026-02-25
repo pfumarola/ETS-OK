@@ -8,6 +8,7 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 const props = defineProps({
     rendiconto: Object,
     anno: Number,
+    anno_precedente_ha_movimenti: { type: Boolean, default: true },
 });
 
 const page = usePage();
@@ -31,6 +32,10 @@ const openExportModal = () => {
 
 const closeExportModal = () => {
     showExportModal.value = false;
+};
+
+const scaricaPdfDiretto = () => {
+    window.location.href = route('reports.rendiconto-cassa.export-pdf', { anno: props.anno });
 };
 
 /** Totali ricalcolati dallo stato modificato (sola lettura in UI). */
@@ -298,6 +303,7 @@ async function generaPdf() {
                 codice_voce: v.codice_voce,
                 tipo: v.tipo,
                 importo: Number(v.importo) || 0,
+                importo_anno_precedente: v.importo_anno_precedente != null && v.importo_anno_precedente !== '' ? Number(v.importo_anno_precedente) : null,
             })),
         })),
     };
@@ -347,7 +353,8 @@ async function generaPdf() {
                     >
                         <option v-for="y in anni" :key="y" :value="y">{{ y }}</option>
                     </select>
-                    <PrimaryButton @click="openExportModal">Esporta PDF</PrimaryButton>
+                    <PrimaryButton v-if="anno_precedente_ha_movimenti" @click="scaricaPdfDiretto">Scarica PDF</PrimaryButton>
+                    <PrimaryButton v-else @click="openExportModal">Esporta PDF</PrimaryButton>
                 </div>
             </div>
         </template>
@@ -539,31 +546,31 @@ async function generaPdf() {
                                             </tr>
                                             <tr v-for="(r, ri) in blocco.righe" :key="'eba-r-' + bi + '-' + ri">
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_u || '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ r.t_u != null ? fmtNum(r.t_u) : '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
                                                     <input
                                                         v-if="r.voceU"
-                                                        v-model.number="r.voceU.importo"
+                                                        v-model.number="r.voceU.importo_anno_precedente"
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
                                                         class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
                                                     />
-                                                    <span v-else></span>
+                                                    <span v-else>{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</span>
                                                 </td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_e || '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ r.t_e != null ? fmtNum(r.t_e) : '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
                                                     <input
                                                         v-if="r.voceE"
-                                                        v-model.number="r.voceE.importo"
+                                                        v-model.number="r.voceE.importo_anno_precedente"
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
                                                         class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
                                                     />
-                                                    <span v-else></span>
+                                                    <span v-else>{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</span>
                                                 </td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</td>
                                             </tr>
                                             <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">Totale</td>
@@ -607,31 +614,31 @@ async function generaPdf() {
                                             </tr>
                                             <tr v-for="(r, ri) in blocco.righe" :key="'ebi-r-' + bi + '-' + ri">
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_u || '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ r.t_u != null ? fmtNum(r.t_u) : '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
                                                     <input
                                                         v-if="r.voceU"
-                                                        v-model.number="r.voceU.importo"
+                                                        v-model.number="r.voceU.importo_anno_precedente"
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
                                                         class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
                                                     />
-                                                    <span v-else></span>
+                                                    <span v-else>{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</span>
                                                 </td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_u != null ? fmtNum(r.t1_u) : '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">{{ r.desc_e || '' }}</td>
+                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">{{ r.t_e != null ? fmtNum(r.t_e) : '' }}</td>
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right">
                                                     <input
                                                         v-if="r.voceE"
-                                                        v-model.number="r.voceE.importo"
+                                                        v-model.number="r.voceE.importo_anno_precedente"
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
                                                         class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 w-20 text-right text-sm"
                                                     />
-                                                    <span v-else></span>
+                                                    <span v-else>{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</span>
                                                 </td>
-                                                <td class="border border-gray-200 dark:border-gray-600 px-2 py-1 text-right text-gray-500">{{ r.t1_e != null ? fmtNum(r.t1_e) : '' }}</td>
                                             </tr>
                                             <tr class="bg-gray-50 dark:bg-gray-700/50 font-medium">
                                                 <td class="border border-gray-200 dark:border-gray-600 px-2 py-1">Totale</td>

@@ -13,6 +13,7 @@ class Conto extends Model
         'name',
         'code',
         'type',
+        'iban',
         'ordine',
         'attivo',
     ];

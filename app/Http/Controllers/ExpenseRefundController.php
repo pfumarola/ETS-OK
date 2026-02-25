@@ -286,7 +286,7 @@ class ExpenseRefundController extends Controller
     /**
      * Approva una richiesta di rimborso: crea una voce prima nota per ogni riga di spesa e imposta stato contabilizzata.
      */
-    public function approva(ExpenseRefund $expenseRefund)
+    public function approva(Request $request, ExpenseRefund $expenseRefund)
     {
         if ($expenseRefund->status !== 'richiesta') {
             return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Solo le richieste in attesa possono essere approvate.']);
@@ -296,6 +296,15 @@ class ExpenseRefundController extends Controller
 
         if ($expenseRefund->primaNotaEntries()->exists()) {
             return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Già contabilizzato.']);
+        }
+
+        $refundDate = \Carbon\Carbon::parse($expenseRefund->refund_date);
+        $annoPrecedente = $refundDate->year < (int) date('Y');
+        if ($annoPrecedente && ! $request->boolean('confirm_anno_precedente')) {
+            return redirect()->back()->with('flash', [
+                'type' => 'confirm_anno_precedente_required',
+                'message' => 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?',
+            ]);
         }
 
         $ref = 'Rimborso spese #' . $expenseRefund->id;

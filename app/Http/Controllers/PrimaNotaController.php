@@ -44,7 +44,7 @@ class PrimaNotaController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $conti = Conto::attivi()->ordered()->get(['id', 'name', 'code', 'type']);
         if ($conti->isEmpty()) {
@@ -55,6 +55,7 @@ class PrimaNotaController extends Controller
             'rendicontoVoci' => RendicontoCassaSchema::getSelectableVoices(),
             'macroAreas' => RendicontoCassaSchema::getMacroAreasForSelect(),
             'conti' => $conti,
+            'oldInput' => $request->old(),
         ]);
     }
 
@@ -69,7 +70,17 @@ class PrimaNotaController extends Controller
             'description' => 'nullable|string|max:255',
             'gestione' => 'nullable|in:istituzionale,commerciale',
             'competenza_cassa' => 'boolean',
+            'confirm_anno_precedente' => 'boolean',
         ]);
+
+        $annoMovimento = (int) \Carbon\Carbon::parse($request->date)->format('Y');
+        $annoCorrente = (int) date('Y');
+        if ($annoMovimento < $annoCorrente && ! $request->boolean('confirm_anno_precedente')) {
+            return redirect()->route('prima-nota.create')->withInput()->with('flash', [
+                'type' => 'confirm_anno_precedente_required',
+                'message' => 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?',
+            ]);
+        }
 
         $info = RendicontoCassaSchema::getInfoByCode($request->rendiconto_code);
         $amount = (float) $request->amount;
@@ -115,7 +126,16 @@ class PrimaNotaController extends Controller
             'description' => 'nullable|string|max:255',
             'gestione' => 'nullable|in:istituzionale,commerciale',
             'competenza_cassa' => 'boolean',
+            'confirm_anno_precedente' => 'boolean',
         ]);
+
+        $date = \Carbon\Carbon::parse($request->date);
+        if ($date->year < (int) date('Y') && ! $request->boolean('confirm_anno_precedente')) {
+            return redirect()->back()->withInput()->with('flash', [
+                'type' => 'confirm_anno_precedente_required',
+                'message' => 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?',
+            ]);
+        }
 
         $info = RendicontoCassaSchema::getInfoByCode($request->rendiconto_code);
         $amount = (float) $request->amount;
@@ -137,6 +157,28 @@ class PrimaNotaController extends Controller
         ]);
 
         return redirect()->route('prima-nota.index')->with('flash', ['type' => 'success', 'message' => 'Movimento aggiornato.']);
+    }
+
+    public function destroy(Request $request, PrimaNotaEntry $prima_nota_entry)
+    {
+        $request->validate(['confirm_anno_precedente' => 'boolean']);
+        $entryYear = (int) $prima_nota_entry->date->format('Y');
+        $currentYear = (int) date('Y');
+        if ($entryYear < $currentYear && ! $request->boolean('confirm_anno_precedente')) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'confirm_anno_precedente_required' => true,
+                    'message' => 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?',
+                ], 409);
+            }
+            return redirect()->back()->with('flash', [
+                'type' => 'confirm_anno_precedente_required',
+                'message' => 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?',
+                'destroy_entry_id' => $prima_nota_entry->id,
+            ]);
+        }
+        $prima_nota_entry->delete();
+        return redirect()->route('prima-nota.index')->with('flash', ['type' => 'success', 'message' => 'Movimento eliminato.']);
     }
 
     public function createGiroconto()

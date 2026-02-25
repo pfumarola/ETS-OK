@@ -1,11 +1,12 @@
 <script setup>
 import { CheckIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
-import { computed, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 import SearchableMemberSelect from '@/Components/SearchableMemberSelect.vue';
 import TextInput from '@/Components/TextInput.vue';
 
@@ -22,6 +23,9 @@ const props = defineProps({
     causale_default_donazione: { type: String, default: 'Erogazione liberale' },
 });
 
+const page = usePage();
+const showConfirmAnnoPrecedenteModal = ref(false);
+
 const form = useForm({
     type: props.preselectedType,
     donor_mode: props.preselectedType === 'donazione' ? (props.preselectedMember?.id ? 'member' : 'manual') : 'member',
@@ -34,6 +38,7 @@ const form = useForm({
     description: props.preselectedType === 'donazione' ? (props.causale_default_donazione ?? 'Erogazione liberale') : (props.preselectedDescription ?? props.causale_default_quota ?? ''),
     issue_receipt: true,
     genera_prima_nota: true,
+    confirm_anno_precedente: false,
 });
 
 const subscriptionsForMember = computed(() => {
@@ -49,14 +54,25 @@ watch(() => form.type, (newType) => {
         : (props.causale_default_quota ?? 'Quota associativa');
 });
 
+watch(() => page.props.flash, (flash) => {
+    if (flash?.type === 'confirm_anno_precedente_required') showConfirmAnnoPrecedenteModal.value = true;
+}, { immediate: true });
+
 const submitLabel = computed(() => form.type === 'donazione' ? 'Registra donazione' : 'Registra incasso');
 
-function onSubmit() {
+function onSubmit(withConfirm = false) {
+    const isConfirm = withConfirm === true;
     if (form.type === 'donazione') {
         if (form.donor_mode === 'manual') form.member_id = '';
         else form.donor_name = '';
     }
+    form.confirm_anno_precedente = isConfirm;
     form.post(route('incassi.store'));
+}
+
+function confirmAnnoPrecedenteProceed() {
+    showConfirmAnnoPrecedenteModal.value = false;
+    onSubmit(true);
 }
 </script>
 
@@ -68,7 +84,7 @@ function onSubmit() {
         </template>
 
         <div class="py-6 max-w-2xl mx-auto sm:px-6">
-            <form @submit.prevent="onSubmit" class="space-y-4 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <form @submit.prevent="() => onSubmit()" class="space-y-4 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <div>
                     <InputLabel for="type" value="Tipo" />
                     <select id="type" v-model="form.type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
@@ -167,5 +183,17 @@ function onSubmit() {
                 </div>
             </form>
         </div>
+
+        <Teleport to="body">
+            <div v-if="showConfirmAnnoPrecedenteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                    <p class="text-gray-700 dark:text-gray-300">{{ page.props.flash?.message || 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?' }}</p>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <SecondaryButton @click="showConfirmAnnoPrecedenteModal = false">Annulla</SecondaryButton>
+                        <PrimaryButton @click="confirmAnnoPrecedenteProceed">Procedi</PrimaryButton>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </AppLayout>
 </template>

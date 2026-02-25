@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PrimaNotaEntry;
 use App\Services\RendicontoCassaSchema;
 use App\Services\RendicontoCassaService;
 use App\Support\PdfLetterheadData;
@@ -26,10 +27,26 @@ class RendicontoCassaController extends Controller
         $anno = $anno >= 2000 && $anno <= 2100 ? $anno : (int) now()->year;
 
         $data = $service->buildRendiconto($anno);
+        $annoPrecedente = $anno - 1;
+        $annoPrecedenteHaMovimenti = false;
+        $mapPrecedente = [];
+        if ($annoPrecedente >= 2000 && $annoPrecedente <= 2100) {
+            $annoPrecedenteHaMovimenti = PrimaNotaEntry::whereYear('date', $annoPrecedente)->exists();
+            $dataPrecedente = $service->buildRendiconto($annoPrecedente);
+            $mapPrecedente = $this->buildMapCodiceToImporto($dataPrecedente['sezioni'] ?? []);
+        }
+        $data['anno_precedente'] = $annoPrecedente;
+        foreach ($data['sezioni'] ?? [] as $i => $sezione) {
+            foreach ($sezione['voci'] ?? [] as $j => $voce) {
+                $code = $voce['codice_voce'] ?? '';
+                $data['sezioni'][$i]['voci'][$j]['importo_anno_precedente'] = round((float) ($mapPrecedente[$code] ?? 0), 2);
+            }
+        }
 
         return Inertia::render('Reports/RendicontoCassa', [
             'rendiconto' => $data,
             'anno' => $anno,
+            'anno_precedente_ha_movimenti' => $annoPrecedenteHaMovimenti,
         ]);
     }
 
@@ -86,6 +103,7 @@ class RendicontoCassaController extends Controller
             'sezioni.*.voci.*.codice_voce' => 'required|string|in:' . implode(',', $validCodes),
             'sezioni.*.voci.*.tipo' => 'required|string|in:entrata,uscita',
             'sezioni.*.voci.*.importo' => 'required|numeric|min:0',
+            'sezioni.*.voci.*.importo_anno_precedente' => 'nullable|numeric|min:0',
         ];
         $validated = $request->validate($rules);
 
@@ -116,12 +134,16 @@ class RendicontoCassaController extends Controller
                     $totaleUsciteSez += $importo;
                     $totaleUscite += $importo;
                 }
+                $importoAnnoPrec = array_key_exists('importo_anno_precedente', $v) && $v['importo_anno_precedente'] !== null && $v['importo_anno_precedente'] !== ''
+                    ? round((float) $v['importo_anno_precedente'], 2)
+                    : null;
                 $vociSezione[] = [
                     'codice_voce' => $code,
                     'ministerial_code' => $ministerialCode,
                     'descrizione' => $descrizione,
                     'tipo' => $tipo,
                     'importo' => $importo,
+                    'importo_anno_precedente' => $importoAnnoPrec,
                 ];
             }
 
@@ -166,7 +188,10 @@ class RendicontoCassaController extends Controller
         foreach ($sezioni as $i => $s) {
             foreach ($s['voci'] ?? [] as $j => $v) {
                 $code = $v['codice_voce'] ?? '';
-                $sezioni[$i]['voci'][$j]['importo_anno_precedente'] = round((float) ($mapPrecedente[$code] ?? 0), 2);
+                $fromPayload = $v['importo_anno_precedente'] ?? null;
+                $sezioni[$i]['voci'][$j]['importo_anno_precedente'] = $fromPayload !== null
+                    ? $fromPayload
+                    : round((float) ($mapPrecedente[$code] ?? 0), 2);
             }
         }
 

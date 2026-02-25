@@ -14,6 +14,7 @@ const form = useForm({
     name: props.conto.name ?? '',
     code: props.conto.code ?? '',
     type: props.conto.type ?? 'cassa',
+    iban: props.conto.iban ?? '',
     ordine: props.conto.ordine ?? 0,
     attivo: props.conto.attivo ?? true,
 });
@@ -49,6 +50,11 @@ const form = useForm({
                         <option value="altro">Altro</option>
                     </select>
                     <InputError class="mt-1" :message="form.errors.type" />
+                </div>
+                <div v-show="form.type === 'banca'">
+                    <InputLabel for="iban" value="IBAN" />
+                    <TextInput id="iban" v-model="form.iban" class="mt-1 block w-full" placeholder="es. IT60X0542811101000000123456" maxlength="34" />
+                    <InputError class="mt-1" :message="form.errors.iban" />
                 </div>
                 <div>
                     <InputLabel for="ordine" value="Ordine" />

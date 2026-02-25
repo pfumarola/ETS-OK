@@ -1,11 +1,12 @@
 <script setup>
 import { ArrowDownTrayIcon, ArrowLeftIcon, PaperClipIcon, PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
 const props = defineProps({
@@ -40,11 +41,24 @@ const printReceipt = () => {
     window.location.href = route('expense-refunds.print', props.refund.id);
 };
 
-const approva = () => {
-    if (confirm('Approvare questa richiesta di rimborso?')) {
-        router.post(route('expense-refunds.approva', props.refund.id));
-    }
+const showConfirmAnnoPrecedenteModal = ref(false);
+const page = usePage();
+
+watch(() => page.props.flash, (flash) => {
+    if (flash?.type === 'confirm_anno_precedente_required') showConfirmAnnoPrecedenteModal.value = true;
+}, { immediate: true });
+
+const approva = (withConfirmAnnoPrecedente = false) => {
+    const isConfirm = withConfirmAnnoPrecedente === true;
+    if (!isConfirm && !confirm('Approvare questa richiesta di rimborso?')) return;
+    const data = isConfirm ? { confirm_anno_precedente: 1 } : {};
+    router.post(route('expense-refunds.approva', props.refund.id), data);
 };
+
+function confirmAnnoPrecedenteProceed() {
+    showConfirmAnnoPrecedenteModal.value = false;
+    approva(true);
+}
 
 const canEditItems = () => props.refund.status === 'bozza' || props.refund.status === 'richiesta';
 
@@ -70,6 +84,8 @@ const canDownloadReceipt = () =>
 
 const canEditAttachments = () => props.refund.status === 'bozza' || props.refund.status === 'richiesta';
 
+const flashMessage = computed(() => page.props.flash?.message || 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?');
+
 const formatSize = (bytes) => {
     if (bytes == null || bytes < 1024) return (bytes ?? 0) + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -83,7 +99,6 @@ const removeAttachment = (attachment) => {
 
 const showAttachmentsSection = () => canEditAttachments() || (props.refund.attachments && props.refund.attachments.length > 0);
 
-const page = usePage();
 const attachmentError = computed(() => {
     const err = page.props.errors?.file;
     if (!err) return null;
@@ -113,7 +128,7 @@ const attachmentError = computed(() => {
             <!-- Stato richiesta: in attesa di approvazione -->
             <div v-if="refund.status === 'richiesta'" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex flex-wrap items-center gap-3">
                 <span class="text-amber-800 dark:text-amber-200">In attesa di approvazione.</span>
-                <form v-if="canApprove" @submit.prevent="approva" class="inline">
+                <form v-if="canApprove" @submit.prevent="() => approva()" class="inline">
                     <PrimaryButton type="submit">Approva</PrimaryButton>
                 </form>
             </div>
@@ -189,5 +204,17 @@ const attachmentError = computed(() => {
             </div>
             <div v-if="refund.status === 'contabilizzata'" class="text-sm text-green-600">Rimborso contabilizzato.</div>
         </div>
+
+        <Teleport to="body">
+            <div v-if="showConfirmAnnoPrecedenteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                    <p class="text-gray-700 dark:text-gray-300">{{ flashMessage }}</p>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <SecondaryButton @click="showConfirmAnnoPrecedenteModal = false">Annulla</SecondaryButton>
+                        <PrimaryButton @click="confirmAnnoPrecedenteProceed">Procedi</PrimaryButton>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </AppLayout>
 </template>

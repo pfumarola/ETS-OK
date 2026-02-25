@@ -42,6 +42,7 @@ function deleteConto(conto) {
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Nome</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Codice</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Tipo</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">IBAN</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ordine</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Stato</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Movimenti</th>
@@ -53,6 +54,7 @@ function deleteConto(conto) {
                                 <td class="px-4 py-2 font-medium text-gray-900 dark:text-gray-100">{{ c.name }}</td>
                                 <td class="px-4 py-2">{{ c.code || '—' }}</td>
                                 <td class="px-4 py-2">{{ tipoLabel(c.type) }}</td>
+                                <td class="px-4 py-2">{{ c.type === 'banca' ? (c.iban || '—') : '—' }}</td>
                                 <td class="px-4 py-2">{{ c.ordine ?? 0 }}</td>
                                 <td class="px-4 py-2">{{ c.attivo ? 'Attivo' : 'Non attivo' }}</td>
                                 <td class="px-4 py-2">{{ c.movimenti_count ?? 0 }}</td>

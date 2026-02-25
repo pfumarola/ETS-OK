@@ -1,26 +1,30 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
 import { CheckIcon, ArrowLeftIcon } from '@heroicons/vue/24/outline';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import HelpTooltip from '@/Components/HelpTooltip.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 
-const props = defineProps({ rendicontoVoci: Array, macroAreas: Array, conti: Array });
+const props = defineProps({ rendicontoVoci: Array, macroAreas: Array, conti: Array, oldInput: Object });
+const page = usePage();
+const showConfirmAnnoPrecedenteModal = ref(false);
 
 const selectedMacroCode = ref('');
 
+const o = props.oldInput || {};
 const form = useForm({
-    conto_id: '',
-    rendiconto_code: '',
-    date: new Date().toISOString().slice(0, 10),
-    amount: '',
-    description: '',
-    gestione: 'istituzionale',
-    competenza_cassa: true,
+    conto_id: o.conto_id ?? '',
+    rendiconto_code: o.rendiconto_code ?? '',
+    date: o.date ?? new Date().toISOString().slice(0, 10),
+    amount: o.amount ?? '',
+    description: o.description ?? '',
+    gestione: o.gestione ?? 'istituzionale',
+    competenza_cassa: o.competenza_cassa !== undefined ? (o.competenza_cassa !== false && o.competenza_cassa !== '0' && o.competenza_cassa !== 0) : true,
 });
 
 watch(selectedMacroCode, (newMacroCode) => {
@@ -86,9 +90,16 @@ const amountSignHint = computed(() => {
 
 const submitError = ref('');
 
-function handleSubmit() {
+watch(() => page.props.flash, (flash) => {
+    if (flash?.type === 'confirm_anno_precedente_required') {
+        showConfirmAnnoPrecedenteModal.value = true;
+    }
+}, { immediate: true });
+
+function handleSubmit(withConfirm = false) {
+    const isConfirm = withConfirm === true;
     submitError.value = '';
-    if (!canSubmit.value) {
+    if (!canSubmit.value && !isConfirm) {
         if (selectedVoiceType.value === 'entrata' && parseFloat(form.amount) < 0) {
             submitError.value = 'Per una voce di entrata l\'importo deve essere positivo.';
         } else if (selectedVoiceType.value === 'uscita' && parseFloat(form.amount) > 0) {
@@ -98,7 +109,12 @@ function handleSubmit() {
         }
         return;
     }
-    form.post(route('prima-nota.store'));
+    form.transform((data) => ({ ...data, confirm_anno_precedente: isConfirm })).post(route('prima-nota.store'));
+}
+
+function confirmAnnoPrecedenteProceed() {
+    showConfirmAnnoPrecedenteModal.value = false;
+    handleSubmit(true);
 }
 </script>
 
@@ -110,7 +126,7 @@ function handleSubmit() {
         </template>
 
         <div class="py-6 max-w-2xl mx-auto sm:px-6">
-            <form @submit.prevent="handleSubmit" class="space-y-4 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <form @submit.prevent="() => handleSubmit()" class="space-y-4 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <div>
                     <InputLabel for="conto_id" value="Conto *" />
                     <select
@@ -189,6 +205,18 @@ function handleSubmit() {
                     <Link :href="route('prima-nota.index')" class="inline-flex items-center gap-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700"><ArrowLeftIcon class="size-4 me-1" aria-hidden="true" />Annulla</Link>
                 </div>
             </form>
+
+            <Teleport to="body">
+                <div v-if="showConfirmAnnoPrecedenteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                        <p class="text-gray-700 dark:text-gray-300">{{ page.props.flash?.message || 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?' }}</p>
+                        <div class="mt-4 flex justify-end gap-2">
+                            <SecondaryButton @click="showConfirmAnnoPrecedenteModal = false">Annulla</SecondaryButton>
+                            <PrimaryButton @click="confirmAnnoPrecedenteProceed">Procedi</PrimaryButton>
+                        </div>
+                    </div>
+                </div>
+            </Teleport>
         </div>
     </AppLayout>
 </template>

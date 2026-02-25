@@ -101,6 +101,7 @@ class EmailTemplateController extends Controller
                 'link' => 'https://esempio.it/members/admission-request/xxx',
                 'expiry_days' => '7',
                 'appName' => 'Nome Associazione',
+                'year' => (string) now()->year,
             ],
             'ricevuta' => [
                 'receipt_number' => '2024-001',
@@ -108,11 +109,14 @@ class EmailTemplateController extends Controller
                 'appName' => 'Nome Associazione',
                 'receipt_amount' => '50,00',
                 'recipient_name' => 'Mario Rossi',
+                'year' => (string) now()->year,
             ],
             'notifica_approvazione_socio' => [
                 'appName' => 'Nome Associazione',
                 'member_name' => 'Mario Rossi',
                 'quota_importo' => '50,00',
+                'iban' => 'IT60X0542811101000000123456',
+                'year' => (string) now()->year,
             ],
         ];
 

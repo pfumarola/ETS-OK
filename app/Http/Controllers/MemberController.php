@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
+use App\Models\Conto;
 use App\Models\EmailTemplate;
 use App\Models\Member;
 use App\Models\MemberType;
@@ -310,10 +311,14 @@ class MemberController extends Controller
         if ($sendEmail && ! empty(trim((string) $member->email))) {
             $quota = (float) Settings::get('quota_annuale', 0);
             $quotaImporto = number_format($quota, 2, ',', '.');
+            $contoBanca = Conto::where('type', 'banca')->where('attivo', true)->ordered()->first();
+            $iban = $contoBanca && ! empty(trim((string) $contoBanca->iban)) ? trim($contoBanca->iban) : '';
             $replacements = [
                 'appName' => Settings::get('nome_associazione', config('app.name')),
                 'member_name' => $member->full_name,
                 'quota_importo' => $quotaImporto,
+                'iban' => $iban,
+                'year' => (string) now()->year,
             ];
             $rendered = EmailTemplate::render('notifica_approvazione_socio', $replacements);
             if ($rendered) {

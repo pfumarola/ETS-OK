@@ -10,6 +10,7 @@ return [
                 'link' => 'Link per compilare la domanda (a uso singolo)',
                 'expiry_days' => 'Giorni di validità del link',
                 'appName' => 'Nome associazione',
+                'year' => 'Anno corrente',
             ],
         ],
         'ricevuta' => [
@@ -22,6 +23,7 @@ return [
                 'appName' => 'Nome associazione',
                 'receipt_amount' => 'Importo (opzionale)',
                 'recipient_name' => 'Nome destinatario (opzionale)',
+                'year' => 'Anno corrente',
             ],
         ],
         'notifica_approvazione_socio' => [
@@ -32,6 +34,8 @@ return [
                 'appName' => 'Nome associazione',
                 'member_name' => 'Nome e cognome del socio',
                 'quota_importo' => 'Importo quota annuale formattato (es. 50,00)',
+                'iban' => 'IBAN del conto bancario per il bonifico (facoltativo)',
+                'year' => 'Anno corrente',
             ],
         ],
     ],

@@ -95,6 +95,7 @@ class ReceiptController extends Controller
             'appName' => $appName,
             'receipt_amount' => $rawAmount !== null && $rawAmount !== '' ? number_format((float) $rawAmount, 2, ',', '.') : '',
             'recipient_name' => $receipt->member ? trim($receipt->member->cognome . ' ' . $receipt->member->nome) : '',
+            'year' => (string) now()->year,
         ];
         $rendered = EmailTemplate::render('ricevuta', $replacements);
 

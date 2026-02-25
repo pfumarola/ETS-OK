@@ -10,6 +10,7 @@ use App\Models\Settings;
 use App\Models\Subscription;
 use App\Services\ReceiptService;
 use App\Services\RendicontoCassaSchema;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -137,6 +138,7 @@ class IncassoController extends Controller
             'description' => 'nullable|string|max:255',
             'issue_receipt' => 'boolean',
             'genera_prima_nota' => 'boolean',
+            'confirm_anno_precedente' => 'boolean',
         ];
         if ($request->input('type') === 'quota') {
             $rules['member_id'] = 'required|exists:members,id';
@@ -145,6 +147,16 @@ class IncassoController extends Controller
             $rules['donor_name'] = 'nullable|string|max:255';
         }
         $request->validate($rules);
+
+        $paidAt = Carbon::parse($request->paid_at);
+        $annoPrecedente = $paidAt->year < (int) date('Y');
+        $sensibile = $annoPrecedente && ($request->boolean('genera_prima_nota', true) || $request->boolean('issue_receipt'));
+        if ($sensibile && ! $request->boolean('confirm_anno_precedente')) {
+            return redirect()->back()->withInput()->with('flash', [
+                'type' => 'confirm_anno_precedente_required',
+                'message' => 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?',
+            ]);
+        }
 
         $subscriptionId = $request->input('type') === 'donazione' ? null : $request->subscription_id;
         $donorName = $request->input('type') === 'donazione' ? $request->filled('donor_name') ? trim($request->donor_name) : null : null;

@@ -56,6 +56,7 @@ class MemberInviteController extends Controller
                 'link' => $link,
                 'expiry_days' => (string) $expiryDays,
                 'appName' => $appName,
+                'year' => (string) now()->year,
             ]);
 
             if ($rendered) {

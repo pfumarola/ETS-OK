@@ -1,11 +1,15 @@
 <script setup>
-import { PlusIcon, FunnelIcon, PencilSquareIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
-import { reactive } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { PlusIcon, FunnelIcon, PencilSquareIcon, TrashIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
+import { reactive, ref, watch } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import SecondaryButton from '@/Components/SecondaryButton.vue';
 
 const props = defineProps({ entries: Object, rendicontoVoci: Array, filters: Object });
+const page = usePage();
+const showConfirmDestroyModal = ref(false);
+const entryIdToDestroy = ref(null);
 
 const form = reactive({
     from: props.filters?.from ?? '',
@@ -13,7 +17,30 @@ const form = reactive({
     rendiconto_code: props.filters?.rendiconto_code ?? '',
 });
 
+watch(() => page.props.flash, (flash) => {
+    if (flash?.type === 'confirm_anno_precedente_required' && flash?.destroy_entry_id) {
+        entryIdToDestroy.value = flash.destroy_entry_id;
+        showConfirmDestroyModal.value = true;
+    }
+}, { immediate: true });
+
 const search = () => router.get(route('prima-nota.index'), form);
+
+function deleteEntry(id) {
+    router.delete(route('prima-nota.destroy', id));
+}
+
+function confirmDestroyProceed() {
+    const id = entryIdToDestroy.value;
+    showConfirmDestroyModal.value = false;
+    entryIdToDestroy.value = null;
+    if (id) router.delete(route('prima-nota.destroy', id) + '?confirm_anno_precedente=1');
+}
+
+function closeConfirmDestroyModal() {
+    showConfirmDestroyModal.value = false;
+    entryIdToDestroy.value = null;
+}
 </script>
 
 <template>
@@ -73,10 +100,13 @@ const search = () => router.get(route('prima-nota.index'), form);
                                 <td class="px-4 py-2">{{ e.rendiconto_label || (e.rendiconto_code ?? '') }}</td>
                                 <td class="px-4 py-2">{{ e.description || '—' }}</td>
                                 <td class="px-4 py-2 text-right" :class="Number(e.amount) >= 0 ? 'text-green-600' : 'text-red-600'">€ {{ Number(e.amount).toFixed(2) }}</td>
-                                <td class="px-4 py-2 text-right">
+                                <td class="px-4 py-2 text-right flex gap-2 justify-end">
                                     <Link :href="route('prima-nota.edit', e.id)" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                                         <PencilSquareIcon class="size-4" aria-hidden="true" />Modifica
                                     </Link>
+                                    <button type="button" @click="deleteEntry(e.id)" class="inline-flex items-center gap-1 text-sm text-red-600 dark:text-red-400 hover:underline">
+                                        <TrashIcon class="size-4" aria-hidden="true" />Elimina
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -90,5 +120,17 @@ const search = () => router.get(route('prima-nota.index'), form);
                 </div>
             </div>
         </div>
+
+        <Teleport to="body">
+            <div v-if="showConfirmDestroyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+                    <p class="text-gray-700 dark:text-gray-300">{{ page.props.flash?.message || 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?' }}</p>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <SecondaryButton @click="closeConfirmDestroyModal">Annulla</SecondaryButton>
+                        <PrimaryButton @click="confirmDestroyProceed">Procedi</PrimaryButton>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </AppLayout>
 </template>

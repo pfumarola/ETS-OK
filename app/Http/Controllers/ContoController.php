@@ -34,11 +34,15 @@ class ContoController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             'type' => 'required|in:cassa,banca,altro',
+            'iban' => 'nullable|string|max:34',
             'ordine' => 'nullable|integer',
             'attivo' => 'boolean',
         ]);
         $data['attivo'] = $request->boolean('attivo', true);
         $data['ordine'] = $data['ordine'] ?? 0;
+        if (($data['type'] ?? '') !== 'banca') {
+            $data['iban'] = null;
+        }
         Conto::create($data);
         return redirect()->route('conti.index')->with('flash', ['type' => 'success', 'message' => 'Conto creato.']);
     }
@@ -54,11 +58,15 @@ class ContoController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'nullable|string|max:50',
             'type' => 'required|in:cassa,banca,altro',
+            'iban' => 'nullable|string|max:34',
             'ordine' => 'nullable|integer',
             'attivo' => 'boolean',
         ]);
         $data['attivo'] = $request->boolean('attivo', true);
         $data['ordine'] = $data['ordine'] ?? 0;
+        if (($data['type'] ?? '') !== 'banca') {
+            $data['iban'] = null;
+        }
         $conti->update($data);
         return redirect()->route('conti.index')->with('flash', ['type' => 'success', 'message' => 'Conto aggiornato.']);
     }
