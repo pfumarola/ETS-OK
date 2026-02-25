@@ -126,9 +126,10 @@ Route::middleware([
     Route::get('settings/letterhead-preview', [SettingsController::class, 'letterheadPreview'])->name('settings.letterhead-preview');
     Route::get('attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
 
-    // Media (file manager in sola lettura)
-    Route::get('media', [MediaController::class, 'index'])->name('media.index')->middleware('role:admin,segreteria');
-    Route::get('media/download', [MediaController::class, 'download'])->name('media.download')->middleware('role:admin,segreteria');
+    // File manager (sola lettura, stile cloud drive)
+    Route::get('file', [MediaController::class, 'index'])->name('file.index')->middleware('role:admin,segreteria');
+    Route::get('file/download', [MediaController::class, 'download'])->name('file.download')->middleware('role:admin,segreteria');
+    Route::get('file/preview', [MediaController::class, 'preview'])->name('file.preview')->middleware('role:admin,segreteria');
 
     // Quote sociali e erogazioni liberali (pagine distinte); create/show condivisi
     Route::get('quote-sociali', [IncassoController::class, 'indexQuote'])->name('quote-sociali.index');

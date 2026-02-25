@@ -80,8 +80,8 @@ class MediaController extends Controller
             ];
         }
 
-        // Breadcrumb: root "Media" + segmenti con nome reale (cartella sul disco)
-        $breadcrumb = [['path' => '', 'label' => 'Media']];
+        // Breadcrumb: root "I miei file" + segmenti con nome reale (cartella sul disco)
+        $breadcrumb = [['path' => '', 'label' => 'I miei file']];
         if ($currentPath !== '') {
             $segments = explode('/', $currentPath);
             $acc = '';
@@ -91,10 +91,39 @@ class MediaController extends Controller
             }
         }
 
-        return Inertia::render('Media/Index', [
+        return Inertia::render('File/Index', [
             'items' => $items,
             'breadcrumb' => $breadcrumb,
             'currentPath' => $currentPath,
+        ]);
+    }
+
+    /**
+     * Anteprima inline di un file (per img/iframe nel pannello preview).
+     */
+    public function preview(Request $request)
+    {
+        $path = $this->normalizePath($request->input('path'));
+        if ($path === '') {
+            abort(400, 'Path file obbligatorio.');
+        }
+        $fullPath = self::MEDIA_BASE . '/' . $path;
+
+        if (! Storage::disk('local')->exists($fullPath)) {
+            abort(404, 'File non trovato.');
+        }
+        if (Storage::disk('local')->directoryExists($fullPath)) {
+            abort(400, 'L\'anteprima è consentita solo per i file.');
+        }
+
+        $filename = basename($path);
+        $disk = Storage::disk('local');
+        $mime = $disk->mimeType($fullPath) ?: 'application/octet-stream';
+        $pathOnDisk = $disk->path($fullPath);
+
+        return response()->file($pathOnDisk, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . addslashes($filename) . '"',
         ]);
     }
 
