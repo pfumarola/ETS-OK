@@ -97,6 +97,7 @@ jobs:
             -x ".nova/*" \
             -x ".zed/*" \
             -x ".cursor/*" \
+            -x "AGENTS.md" \
             -x "auth.json" \
             -x "storage/*.key" \
             -x "storage/pail/*" \

@@ -5,11 +5,12 @@ return [
         'invito_ammissione' => [
             'label' => 'Invito domanda ammissione',
             'default_subject' => '[{{appName}}] Invito a presentare domanda di ammissione',
-            'default_body' => '<p>Buongiorno,</p><p>Sei stato/a invitato/a a presentare domanda di ammissione come socio presso {{appName}}.</p><p>Clicca sul link qui sotto per compilare il modulo (il link è personale e a uso singolo):</p><p><a href="{{link}}">{{link}}</a></p><p>Il link è valido per {{expiry_days}} giorni. Non condividerlo con altri.</p><p>Cordiali saluti,<br>{{appName}}</p>',
+            'default_body' => '<p>Buongiorno,</p><p>Sei stato/a invitato/a a presentare domanda di ammissione come socio presso {{appName}}.</p><p>La quota sociale per l\'anno in corso è di <strong>€ {{quota_importo}}</strong>.</p><p>Clicca sul link qui sotto per compilare il modulo (il link è personale e a uso singolo):</p><p><a href="{{link}}">{{link}}</a></p><p>Il link è valido per {{expiry_days}} giorni. Non condividerlo con altri.</p><p>Cordiali saluti,<br>{{appName}}</p>',
             'placeholders' => [
                 'link' => 'Link per compilare la domanda (a uso singolo)',
                 'expiry_days' => 'Giorni di validità del link',
                 'appName' => 'Nome associazione',
+                'quota_importo' => 'Importo quota annuale formattato (es. 50,00)',
                 'year' => 'Anno corrente',
             ],
         ],
