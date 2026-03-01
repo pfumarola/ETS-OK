@@ -1,8 +1,18 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { FunnelIcon } from '@heroicons/vue/24/outline';
+import { reactive } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+import TextInput from '@/Components/TextInput.vue';
 
-const props = defineProps({ organi: Object });
+const props = defineProps({ organi: Object, filters: Object });
+
+const form = reactive({
+    search: props.filters?.search ?? '',
+});
+
+const search = () => router.get(route('organi.index'), form);
 </script>
 
 <template>
@@ -14,6 +24,13 @@ const props = defineProps({ organi: Object });
 
         <div class="py-6">
             <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
+                <form @submit.prevent="search" class="mb-4 flex flex-wrap gap-2 items-end">
+                    <div class="min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cerca (nome)</label>
+                        <TextInput v-model="form.search" type="text" class="block w-full" placeholder="Nome organo..." />
+                    </div>
+                    <PrimaryButton type="submit"><FunnelIcon class="size-4 me-2" aria-hidden="true" />Filtra</PrimaryButton>
+                </form>
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">

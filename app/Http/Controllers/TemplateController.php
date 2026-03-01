@@ -13,12 +13,22 @@ class TemplateController extends Controller
         $this->middleware('role:admin,segreteria');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $templates = Template::orderBy('categoria')->orderBy('nome')->paginate(15);
+        $query = Template::orderBy('categoria')->orderBy('nome');
+
+        if ($request->filled('search')) {
+            $query->where('nome', 'like', '%' . $request->search . '%');
+        }
+        if ($request->filled('categoria')) {
+            $query->where('categoria', $request->categoria);
+        }
+
+        $templates = $query->paginate(15)->withQueryString();
 
         return Inertia::render('Templates/Index', [
             'templates' => $templates,
+            'filters' => $request->only('search', 'categoria'),
         ]);
     }
 

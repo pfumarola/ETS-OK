@@ -13,14 +13,25 @@ class ContoController extends Controller
         $this->middleware('role:admin,contabile');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $conti = Conto::query()
+        $query = Conto::query()
             ->withCount(['movimenti', 'incassi'])
-            ->ordered()
-            ->get();
+            ->ordered();
 
-        return Inertia::render('Conti/Index', ['conti' => $conti]);
+        if ($request->filled('search')) {
+            $term = '%' . $request->search . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)->orWhere('code', 'like', $term);
+            });
+        }
+
+        $conti = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('Conti/Index', [
+            'conti' => $conti,
+            'filters' => $request->only('search'),
+        ]);
     }
 
     public function create()

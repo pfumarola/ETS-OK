@@ -1,14 +1,34 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { FolderIcon, DocumentIcon, ArrowDownTrayIcon, DocumentTextIcon, Squares2X2Icon, ListBulletIcon } from '@heroicons/vue/24/outline';
-import { Head, Link } from '@inertiajs/vue3';
+import { ref, computed, reactive } from 'vue';
+import { FolderIcon, DocumentIcon, ArrowDownTrayIcon, DocumentTextIcon, Squares2X2Icon, ListBulletIcon, MagnifyingGlassIcon } from '@heroicons/vue/24/outline';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import TextInput from '@/Components/TextInput.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 const props = defineProps({
     items: Array,
+    pagination: Object,
     breadcrumb: Array,
     currentPath: String,
+    filters: Object,
 });
+
+const form = reactive({
+    search: props.filters?.search ?? props.filters?.q ?? '',
+});
+
+function applySearch() {
+    router.get(route('file.index'), { path: props.currentPath || undefined, search: form.search || undefined }, { preserveState: true });
+}
+
+function fileIndexParams(pathSeg, page) {
+    const params = {};
+    if (pathSeg !== undefined && pathSeg !== null) params.path = pathSeg;
+    if (form.search) params.search = form.search;
+    if (page && page > 1) params.page = page;
+    return Object.keys(params).length ? params : {};
+}
 
 const selected = ref(null);
 const viewMode = ref('grid'); // 'grid' = icone, 'list' = elenco
@@ -78,7 +98,7 @@ function closePreview() {
                                 <span v-if="i > 0" class="text-gray-400 dark:text-gray-500"> &gt; </span>
                                 <Link
                                     v-if="i < breadcrumb.length - 1"
-                                    :href="route('file.index', crumb.path ? { path: crumb.path } : {})"
+                                    :href="route('file.index', fileIndexParams(crumb.path))"
                                     class="text-indigo-600 dark:text-indigo-400 hover:underline"
                                 >
                                     {{ crumb.label }}
@@ -118,13 +138,24 @@ function closePreview() {
         <div class="flex flex-1 min-h-0 py-4 px-4 sm:px-6 lg:px-8">
             <!-- Pannello sinistro: griglia file e cartelle -->
             <div class="flex flex-col min-w-0 flex-1 lg:flex-initial lg:w-1/2 lg:max-w-[50%] lg:pr-4">
+                <form @submit.prevent="applySearch" class="mb-3 flex gap-2 items-center">
+                    <div class="flex-1 min-w-0">
+                        <TextInput
+                            v-model="form.search"
+                            type="text"
+                            class="block w-full"
+                            placeholder="Cerca in questa cartella..."
+                        />
+                    </div>
+                    <PrimaryButton type="submit"><MagnifyingGlassIcon class="size-4 me-2" aria-hidden="true" />Cerca</PrimaryButton>
+                </form>
                 <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-auto flex-1 min-h-[280px]">
                     <!-- Modalità icone (griglia) -->
                     <div v-if="viewMode === 'grid'" class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-3">
                         <template v-for="item in sortedItems" :key="item.path">
                             <Link
                                 v-if="item.type === 'folder'"
-                                :href="route('file.index', { path: item.path })"
+                                :href="route('file.index', fileIndexParams(item.path))"
                                 class="flex flex-col items-center justify-center p-4 rounded-lg border border-transparent hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                             >
                                 <FolderIcon class="size-12 text-amber-500 dark:text-amber-400 mb-2" aria-hidden="true" />
@@ -150,7 +181,7 @@ function closePreview() {
                         <template v-for="item in sortedItems" :key="item.path">
                             <Link
                                 v-if="item.type === 'folder'"
-                                :href="route('file.index', { path: item.path })"
+                                :href="route('file.index', fileIndexParams(item.path))"
                                 class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                             >
                                 <FolderIcon class="size-8 shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
@@ -180,6 +211,12 @@ function closePreview() {
                         </template>
                     </div>
                     <p v-if="!sortedItems.length" class="p-8 text-center text-gray-500 dark:text-gray-400">Questa cartella è vuota.</p>
+                    <div v-if="pagination && (pagination.prev_page_url || pagination.next_page_url)" class="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <Link v-if="pagination.prev_page_url" :href="pagination.prev_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Indietro</Link>
+                        <span v-else></span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Pagina {{ pagination.current_page }} di {{ pagination.last_page }}</span>
+                        <Link v-if="pagination.next_page_url" :href="pagination.next_page_url" class="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">Avanti</Link>
+                    </div>
                 </div>
             </div>
 

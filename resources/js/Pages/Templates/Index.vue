@@ -1,10 +1,19 @@
 <script setup>
-import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, FunnelIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
+import { reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
+import TextInput from '@/Components/TextInput.vue';
 
-const props = defineProps({ templates: Object });
+const props = defineProps({ templates: Object, filters: Object });
+
+const form = reactive({
+    search: props.filters?.search ?? '',
+    categoria: props.filters?.categoria ?? '',
+});
+
+const search = () => router.get(route('templates.index'), form);
 
 function usoLabel(t) {
     if (t.categoria === 'documento') return 'Documento';
@@ -35,6 +44,21 @@ function elimina(t) {
 
         <div class="py-6">
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+                <form @submit.prevent="search" class="mb-4 flex flex-wrap gap-2 items-end">
+                    <div class="min-w-[180px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome</label>
+                        <TextInput v-model="form.search" type="text" class="block w-full" placeholder="Cerca..." />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoria</label>
+                        <select v-model="form.categoria" class="rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
+                            <option value="">Tutte</option>
+                            <option value="documento">Documento</option>
+                            <option value="verbale">Verbale</option>
+                        </select>
+                    </div>
+                    <PrimaryButton type="submit"><FunnelIcon class="size-4 me-2" aria-hidden="true" />Filtra</PrimaryButton>
+                </form>
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">

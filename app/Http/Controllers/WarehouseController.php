@@ -16,10 +16,20 @@ class WarehouseController extends Controller
         $this->middleware('role:admin,segreteria');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $warehouses = Warehouse::with('location')->orderBy('name')->paginate(15);
-        return Inertia::render('Warehouses/Index', ['warehouses' => $warehouses]);
+        $query = Warehouse::with('location')->orderBy('name');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $warehouses = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('Warehouses/Index', [
+            'warehouses' => $warehouses,
+            'filters' => $request->only('search'),
+        ]);
     }
 
     public function create()

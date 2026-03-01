@@ -14,10 +14,20 @@ class LocationController extends Controller
         $this->middleware('role:admin,segreteria');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $locations = Location::withCount('warehouses')->orderBy('name')->paginate(15);
-        return Inertia::render('Locations/Index', ['locations' => $locations]);
+        $query = Location::withCount('warehouses')->orderBy('name');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $locations = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('Locations/Index', [
+            'locations' => $locations,
+            'filters' => $request->only('search'),
+        ]);
     }
 
     public function create()

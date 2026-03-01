@@ -1,14 +1,26 @@
 <script setup>
-import { PlusIcon, EyeIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
-import { Head, Link } from '@inertiajs/vue3';
+import { PlusIcon, EyeIcon, FunnelIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
+import { reactive } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 const props = defineProps({
     refunds: Object,
+    filters: Object,
+    members: Array,
     requestForSelf: { type: Boolean, default: false },
     canApprove: { type: Boolean, default: false },
 });
+
+const form = reactive({
+    from: props.filters?.from ?? '',
+    to: props.filters?.to ?? '',
+    member_id: props.filters?.member_id ?? '',
+    status: props.filters?.status ?? '',
+});
+
+const search = () => router.get(route('expense-refunds.index'), form);
 
 const statusLabel = (status) => {
     const labels = { bozza: 'Bozza', richiesta: 'Richiesta', approvato: 'Approvato', stampata: 'Stampata', contabilizzata: 'Contabilizzata' };
@@ -41,6 +53,37 @@ const statusClass = (status) => {
 
         <div class="py-6">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <form @submit.prevent="search" class="mb-4 flex flex-wrap gap-2 items-end">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Da data</label>
+                        <input v-model="form.from" type="date" class="rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">A data</label>
+                        <input v-model="form.to" type="date" class="rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm" />
+                    </div>
+                    <template v-if="!requestForSelf && members?.length">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Beneficiario</label>
+                            <select v-model="form.member_id" class="rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
+                                <option value="">Tutti</option>
+                                <option v-for="m in members" :key="m.id" :value="String(m.id)">{{ m.cognome }} {{ m.nome }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stato</label>
+                            <select v-model="form.status" class="rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
+                                <option value="">Tutti</option>
+                                <option value="bozza">Bozza</option>
+                                <option value="richiesta">Richiesta</option>
+                                <option value="approvato">Approvato</option>
+                                <option value="stampata">Stampata</option>
+                                <option value="contabilizzata">Contabilizzata</option>
+                            </select>
+                        </div>
+                    </template>
+                    <PrimaryButton type="submit"><FunnelIcon class="size-4 me-2" aria-hidden="true" />Filtra</PrimaryButton>
+                </form>
                 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead class="bg-gray-50 dark:bg-gray-700">

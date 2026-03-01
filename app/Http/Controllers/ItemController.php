@@ -13,10 +13,23 @@ class ItemController extends Controller
         $this->middleware('role:admin,segreteria');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::orderBy('name')->paginate(15);
-        return Inertia::render('Items/Index', ['items' => $items]);
+        $query = Item::orderBy('name');
+
+        if ($request->filled('search')) {
+            $term = '%' . $request->search . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)->orWhere('code', 'like', $term);
+            });
+        }
+
+        $items = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('Items/Index', [
+            'items' => $items,
+            'filters' => $request->only('search'),
+        ]);
     }
 
     public function create()

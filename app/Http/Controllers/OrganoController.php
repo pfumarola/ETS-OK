@@ -16,10 +16,17 @@ class OrganoController extends Controller
 
     public function index(Request $request)
     {
-        $organi = Organo::query()->orderBy('nome')->paginate(15)->withQueryString();
+        $query = Organo::query()->orderBy('nome');
+
+        if ($request->filled('search')) {
+            $query->where('nome', 'like', '%' . $request->search . '%');
+        }
+
+        $organi = $query->paginate(15)->withQueryString();
 
         return Inertia::render('Organi/Index', [
             'organi' => $organi,
+            'filters' => $request->only('search'),
         ]);
     }
 

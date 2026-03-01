@@ -25,7 +25,7 @@ class ExpenseRefundController extends Controller
         $this->middleware('role:admin,segreteria,contabile,socio');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
         $authMember = $user->member;
@@ -38,16 +38,36 @@ class ExpenseRefundController extends Controller
         $query = ExpenseRefund::with('member')->orderByDesc('refund_date');
         if ($isSocioOnly) {
             $query->where('member_id', $authMember->id);
+        } else {
+            if ($request->filled('member_id')) {
+                $query->where('member_id', $request->member_id);
+            }
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
         }
-        $refunds = $query->paginate(20);
+        if ($request->filled('from')) {
+            $query->whereDate('refund_date', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('refund_date', '<=', $request->to);
+        }
+
+        $refunds = $query->paginate(20)->withQueryString();
 
         $canApprove = $user->hasRole('admin') || $user->hasRole('contabile');
 
-        return Inertia::render('ExpenseRefunds/Index', [
+        $payload = [
             'refunds' => $refunds,
             'requestForSelf' => $isSocioOnly,
             'canApprove' => $canApprove,
-        ]);
+            'filters' => $request->only('from', 'to', 'member_id', 'status'),
+        ];
+        if (! $isSocioOnly) {
+            $payload['members'] = Member::orderBy('cognome')->orderBy('nome')->get(['id', 'nome', 'cognome']);
+        }
+
+        return Inertia::render('ExpenseRefunds/Index', $payload);
     }
 
     public function create()
