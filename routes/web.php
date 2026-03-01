@@ -23,6 +23,7 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\PublicDownloadController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SpesaController;
 use App\Http\Controllers\PrimaNotaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\UserController;
@@ -146,6 +147,13 @@ Route::middleware([
     Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download'])->name('receipts.download');
     Route::post('receipts/{receipt}/send-email', [ReceiptController::class, 'sendEmail'])->name('receipts.send-email');
     Route::post('receipts/{receipt}/regenerate', [ReceiptController::class, 'regenerate'])->name('receipts.regenerate');
+
+    // Spese (uscite di cassa con opzione prima nota e voce rendiconto)
+    Route::get('spese', [SpesaController::class, 'index'])->name('spese.index');
+    Route::get('spese/create', [SpesaController::class, 'create'])->name('spese.create');
+    Route::post('spese', [SpesaController::class, 'store'])->name('spese.store');
+    Route::get('spese/{spesa}', [SpesaController::class, 'show'])->name('spese.show');
+    Route::delete('spese/{spesa}', [SpesaController::class, 'destroy'])->name('spese.destroy');
 
     // Rimborsi spese (richiesta → approvazione con contabilizzazione automatica)
     Route::post('expense-refunds/{expense_refund}/approva', [ExpenseRefundController::class, 'approva'])->name('expense-refunds.approva')->middleware('role:admin,contabile');
