@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attachment;
 use App\Models\Conto;
 use App\Models\PrimaNotaEntry;
 use App\Models\Spesa;
+use App\Services\AttachmentService;
 use App\Services\RendicontoCassaSchema;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 /**
@@ -104,11 +108,76 @@ class SpesaController extends Controller
 
     public function show(Spesa $spesa)
     {
-        $spesa->load(['conto', 'primaNotaEntries']);
+        $spesa->load(['conto', 'primaNotaEntries', 'attachments']);
 
         return Inertia::render('Spese/Show', [
             'spesa' => $spesa,
+            'uploadMaxFileSizeHuman' => self::uploadMaxFileSizeHuman(),
         ]);
+    }
+
+    /**
+     * Carica un allegato sulla spesa.
+     */
+    public function storeAttachment(Request $request, Spesa $spesa, AttachmentService $attachmentService)
+    {
+        $maxKb = (int) floor(UploadedFile::getMaxFilesize() / 1024);
+        $appMaxKb = 10240; // 10 MB
+        $limitKb = $maxKb > 0 ? min($appMaxKb, $maxKb) : $appMaxKb;
+        $limitHuman = self::uploadMaxFileSizeHuman();
+
+        $request->validate([
+            'file' => 'required|file|max:' . $limitKb . '|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx',
+        ], [
+            'file.required' => 'Seleziona un file da caricare.',
+            'file.max' => 'Il file non deve superare ' . $limitHuman . ' (limite del server).',
+            'file.mimes' => 'Formato non consentito. Usa PDF, immagini, Word o Excel.',
+        ]);
+
+        $file = $request->file('file');
+        if ($file->getError() !== \UPLOAD_ERR_OK) {
+            $message = match ($file->getError()) {
+                \UPLOAD_ERR_INI_SIZE, \UPLOAD_ERR_FORM_SIZE => 'Il file è troppo grande per le impostazioni del server. Prova con un file più piccolo o chiedi all\'amministratore di aumentare upload_max_filesize e post_max_size in PHP.',
+                \UPLOAD_ERR_PARTIAL => 'Il file è stato caricato solo in parte. Riprova.',
+                default => 'Errore durante l\'upload del file. Riprova.',
+            };
+
+            return redirect()->back()->with('flash', ['type' => 'error', 'message' => $message]);
+        }
+
+        try {
+            $attachmentService->store($file, $spesa);
+        } catch (\Throwable $e) {
+            report($e);
+            Log::error('Upload allegato spesa fallito', [
+                'spesa_id' => $spesa->id,
+                'exception' => $e->getMessage(),
+            ]);
+
+            return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Caricamento non riuscito. Riprova o contatta l\'assistenza.']);
+        }
+
+        return redirect()->back()->with('flash', ['type' => 'success', 'message' => 'Allegato caricato.']);
+    }
+
+    /**
+     * Rimuove un allegato dalla spesa.
+     */
+    public function destroyAttachment(Spesa $spesa, Attachment $attachment)
+    {
+        if ($attachment->attachable_type !== Spesa::class || (int) $attachment->attachable_id !== (int) $spesa->id) {
+            abort(404, 'Allegato non trovato su questa spesa.');
+        }
+
+        $attachment->delete();
+
+        return redirect()->back()->with('flash', ['type' => 'success', 'message' => 'Allegato rimosso.']);
+    }
+
+    private static function uploadMaxFileSizeHuman(): string
+    {
+        $val = trim(ini_get('upload_max_filesize') ?: '2M');
+        return $val;
     }
 
     public function destroy(Request $request, Spesa $spesa)

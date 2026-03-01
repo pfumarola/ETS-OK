@@ -95,5 +95,6 @@ class AttachmentService
     /** Mappatura context (cartelle sotto media/allegati) in italiano. */
     private const CONTEXT_ITALIAN = [
         'documents' => 'documenti',
+        'spesas' => 'spese',
     ];
 }

@@ -1,11 +1,17 @@
 <script setup>
-import { ArrowLeftIcon, TrashIcon } from '@heroicons/vue/24/outline';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { ArrowDownTrayIcon, ArrowLeftIcon, PaperClipIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { computed } from 'vue';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 
-const props = defineProps({ spesa: Object });
+const props = defineProps({
+    spesa: Object,
+    uploadMaxFileSizeHuman: { type: String, default: '10 MB' },
+});
+
+const page = usePage();
 
 const primaNotaEntry = Array.isArray(props.spesa.prima_nota_entries) && props.spesa.prima_nota_entries.length
     ? props.spesa.prima_nota_entries[0]
@@ -15,6 +21,23 @@ function destroy() {
     if (!confirm('Eliminare questa spesa? Verrà eliminato anche l\'eventuale movimento in prima nota collegato.')) return;
     router.delete(route('spese.destroy', props.spesa.id));
 }
+
+function formatSize(bytes) {
+    if (bytes == null || bytes < 1024) return (bytes ?? 0) + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function removeAttachment(attachment) {
+    if (!confirm('Rimuovere questo allegato?')) return;
+    router.delete(route('spese.attachments.destroy', [props.spesa.id, attachment.id]));
+}
+
+const attachmentError = computed(() => {
+    const err = page.props.errors?.file;
+    if (!err) return null;
+    return Array.isArray(err) ? err[0] : err;
+});
 </script>
 
 <template>
@@ -69,6 +92,34 @@ function destroy() {
                         <dd>{{ spesa.description }}</dd>
                     </div>
                 </dl>
+            </div>
+
+            <!-- Allegati -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <PaperClipIcon class="size-5" aria-hidden="true" />
+                    Allegati
+                </h3>
+                <ul v-if="spesa.attachments?.length" class="space-y-2 mb-4">
+                    <li v-for="a in spesa.attachments" :key="a.id" class="flex items-center justify-between gap-2 py-2 border-b border-gray-200 dark:border-gray-600 last:border-0">
+                        <a :href="route('attachments.show', a.id)" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:underline flex-1 min-w-0">
+                            <ArrowDownTrayIcon class="size-4 shrink-0" aria-hidden="true" />
+                            <span class="truncate">{{ a.original_name }}</span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400 shrink-0">{{ formatSize(a.size) }}</span>
+                        </a>
+                        <button type="button" @click="removeAttachment(a)" class="text-red-600 dark:text-red-400 hover:underline shrink-0 flex items-center gap-1" title="Elimina">
+                            <TrashIcon class="size-4" aria-hidden="true" />Elimina
+                        </button>
+                    </li>
+                </ul>
+                <p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nessun allegato.</p>
+                <p v-if="attachmentError" class="text-sm text-red-600 dark:text-red-400 mb-2">{{ attachmentError }}</p>
+                <form :action="route('spese.attachments.store', spesa.id)" method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="_token" :value="$page.props.csrf_token" />
+                    <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx" required class="text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-gray-100 file:text-gray-700 dark:file:bg-gray-700 dark:file:text-gray-300" />
+                    <PrimaryButton type="submit">Carica allegato</PrimaryButton>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Max {{ uploadMaxFileSizeHuman }}. Formati: PDF, immagini, Word, Excel.</span>
+                </form>
             </div>
         </div>
     </AppLayout>

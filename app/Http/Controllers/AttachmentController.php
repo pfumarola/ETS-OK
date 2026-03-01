@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\Document;
 use App\Models\ExpenseRefund;
+use App\Models\Spesa;
 use App\Models\Verbale;
 use Illuminate\Support\Facades\Storage;
 
@@ -50,6 +51,17 @@ class AttachmentController extends Controller
             }
             $user = auth()->user();
             if (! $user->hasRole('admin') && ! $user->hasRole('segreteria')) {
+                abort(403, 'Non autorizzato a scaricare questo allegato.');
+            }
+        }
+
+        if ($attachment->attachable_type === Spesa::class) {
+            $spesa = Spesa::find($attachment->attachable_id);
+            if (! $spesa) {
+                abort(404, 'Spesa non trovata.');
+            }
+            $user = auth()->user();
+            if (! $user->hasRole('admin') && ! $user->hasRole('segreteria') && ! $user->hasRole('contabile')) {
                 abort(403, 'Non autorizzato a scaricare questo allegato.');
             }
         }

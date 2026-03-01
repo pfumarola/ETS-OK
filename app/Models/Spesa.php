@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Attachment;
 use App\Services\RendicontoCassaSchema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +43,11 @@ class Spesa extends Model
     public function primaNotaEntries(): MorphMany
     {
         return $this->morphMany(PrimaNotaEntry::class, 'entryable');
+    }
+
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 
     public function getRendicontoLabelAttribute(): string
