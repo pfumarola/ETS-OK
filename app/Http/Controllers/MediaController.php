@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -84,6 +85,28 @@ class MediaController extends Controller
             ];
         }
 
+        // Filtro opzionale per nome (case-insensitive, contiene)
+        $search = $request->input('search', $request->input('q', ''));
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $items = array_values(array_filter($items, function ($item) use ($needle) {
+                return str_contains(mb_strtolower($item['name']), $needle);
+            }));
+        }
+
+        // Paginazione sull'array (30–50 per pagina)
+        $perPage = 40;
+        $currentPage = (int) $request->input('page', 1);
+        $total = count($items);
+        $slice = array_slice($items, ($currentPage - 1) * $perPage, $perPage);
+        $paginator = new LengthAwarePaginator(
+            $slice,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         // Breadcrumb: root "I miei file" + segmenti con nome reale (cartella sul disco)
         $breadcrumb = [['path' => '', 'label' => 'I miei file']];
         if ($currentPath !== '') {
@@ -96,9 +119,16 @@ class MediaController extends Controller
         }
 
         return Inertia::render('File/Index', [
-            'items' => $items,
+            'items' => $paginator->items(),
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'prev_page_url' => $paginator->previousPageUrl(),
+                'next_page_url' => $paginator->nextPageUrl(),
+            ],
             'breadcrumb' => $breadcrumb,
             'currentPath' => $currentPath,
+            'filters' => $request->only('search', 'q'),
         ]);
     }
 

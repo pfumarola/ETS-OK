@@ -14,10 +14,20 @@ class PropertyController extends Controller
         $this->middleware('role:admin,segreteria');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $properties = Property::withCount('assets')->orderBy('name')->paginate(15);
-        return Inertia::render('Properties/Index', ['properties' => $properties]);
+        $query = Property::withCount('assets')->orderBy('name');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $properties = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('Properties/Index', [
+            'properties' => $properties,
+            'filters' => $request->only('search'),
+        ]);
     }
 
     public function create()

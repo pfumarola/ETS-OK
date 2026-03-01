@@ -28,6 +28,10 @@ class RendicontoCassaSchema
 
     protected static ?array $macroAreasForSelect = null;
 
+    protected static ?array $selectableVoicesUscita = null;
+
+    protected static ?array $macroAreasForSelectUscita = null;
+
     /**
      * Restituisce la struttura completa (macro_areas con children).
      */
@@ -133,6 +137,61 @@ class RendicontoCassaSchema
         self::$selectableVoices = $list;
 
         return self::$selectableVoices;
+    }
+
+    /**
+     * Elenco piatto delle voci selezionabili di tipo uscita (per pagina Spese).
+     * Stessa struttura di getSelectableVoices() ma filtrata a tipo === 'uscita'.
+     */
+    public static function getSelectableVoicesUscita(): array
+    {
+        if (self::$selectableVoicesUscita !== null) {
+            return self::$selectableVoicesUscita;
+        }
+
+        self::$selectableVoicesUscita = array_values(array_filter(
+            self::getSelectableVoices(),
+            fn ($v) => ($v['tipo'] ?? '') === 'uscita'
+        ));
+
+        return self::$selectableVoicesUscita;
+    }
+
+    /**
+     * Codici validi solo per voci di uscita (per validazione Spese).
+     */
+    public static function getValidCodesUscita(): array
+    {
+        return array_map(fn ($v) => $v['code'], self::getSelectableVoicesUscita());
+    }
+
+    /**
+     * Macro aree con solo children di tipo expense (per select a due livelli nella pagina Spese).
+     */
+    public static function getMacroAreasForSelectUscita(): array
+    {
+        if (self::$macroAreasForSelectUscita !== null) {
+            return self::$macroAreasForSelectUscita;
+        }
+
+        $result = [];
+        foreach (self::getMacroAreasForSelect() as $macro) {
+            $children = array_values(array_filter(
+                $macro['children'] ?? [],
+                fn ($c) => ($c['type'] ?? '') === 'expense'
+            ));
+            if (count($children) > 0) {
+                $result[] = [
+                    'code' => $macro['code'],
+                    'name' => $macro['name'],
+                    'area' => $macro['area'] ?? null,
+                    'children' => $children,
+                ];
+            }
+        }
+        self::$macroAreasForSelectUscita = $result;
+
+        return self::$macroAreasForSelectUscita;
     }
 
     /**

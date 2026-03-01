@@ -41,10 +41,26 @@ class EventController extends Controller
         return $val;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $events = Event::withCount('registrations')->orderByDesc('start_at')->paginate(15);
-        return Inertia::render('Events/Index', ['events' => $events]);
+        $query = Event::withCount('registrations')->orderByDesc('start_at');
+
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('start_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('start_at', '<=', $request->to);
+        }
+
+        $events = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('Events/Index', [
+            'events' => $events,
+            'filters' => $request->only('search', 'from', 'to'),
+        ]);
     }
 
     public function create()

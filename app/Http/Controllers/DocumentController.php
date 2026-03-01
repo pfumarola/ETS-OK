@@ -23,13 +23,23 @@ class DocumentController extends Controller
 
     public function index(Request $request)
     {
-        $documents = Document::query()
-            ->orderByDesc('data')
-            ->paginate(15)
-            ->withQueryString();
+        $query = Document::query()->orderByDesc('data');
+
+        if ($request->filled('search')) {
+            $query->where('titolo', 'like', '%' . $request->search . '%');
+        }
+        if ($request->filled('from')) {
+            $query->whereDate('data', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('data', '<=', $request->to);
+        }
+
+        $documents = $query->paginate(15)->withQueryString();
 
         return Inertia::render('Documents/Index', [
             'documents' => $documents,
+            'filters' => $request->only('search', 'from', 'to'),
         ]);
     }
 

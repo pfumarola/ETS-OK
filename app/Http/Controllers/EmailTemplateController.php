@@ -13,22 +13,29 @@ class EmailTemplateController extends Controller
         $this->middleware('role:admin');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $types = config('email_templates.types', []);
-        $templates = EmailTemplate::whereIn('tipo', array_keys($types))->get()->keyBy('tipo');
+        $configTypes = config('email_templates.types', []);
+        $query = EmailTemplate::query()->orderBy('tipo');
 
-        $list = [];
-        foreach ($types as $tipo => $config) {
-            $list[] = [
-                'tipo' => $tipo,
-                'label' => $config['label'] ?? $tipo,
-                'has_custom' => $templates->has($tipo),
-            ];
+        if ($request->filled('search')) {
+            $term = '%' . $request->search . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('tipo', 'like', $term)->orWhere('subject', 'like', $term);
+            });
+        }
+
+        $emailTemplates = $query->paginate(10)->withQueryString();
+
+        $typeLabels = [];
+        foreach ($configTypes as $tipo => $config) {
+            $typeLabels[$tipo] = $config['label'] ?? $tipo;
         }
 
         return Inertia::render('EmailTemplates/Index', [
-            'types' => $list,
+            'emailTemplates' => $emailTemplates,
+            'typeLabels' => $typeLabels,
+            'filters' => $request->only('search'),
         ]);
     }
 

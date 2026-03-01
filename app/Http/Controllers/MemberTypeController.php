@@ -16,10 +16,20 @@ class MemberTypeController extends Controller
         $this->middleware('role:admin,segreteria');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $types = MemberType::withCount('members')->orderBy('name')->paginate(15);
-        return Inertia::render('MemberTypes/Index', ['memberTypes' => $types]);
+        $query = MemberType::withCount('members')->orderBy('name');
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        $types = $query->paginate(15)->withQueryString();
+
+        return Inertia::render('MemberTypes/Index', [
+            'memberTypes' => $types,
+            'filters' => $request->only('search'),
+        ]);
     }
 
     public function create()
