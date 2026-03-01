@@ -154,6 +154,8 @@ Route::middleware([
     Route::post('spese', [SpesaController::class, 'store'])->name('spese.store');
     Route::get('spese/{spesa}', [SpesaController::class, 'show'])->name('spese.show');
     Route::delete('spese/{spesa}', [SpesaController::class, 'destroy'])->name('spese.destroy');
+    Route::post('spese/{spesa}/attachments', [SpesaController::class, 'storeAttachment'])->name('spese.attachments.store');
+    Route::delete('spese/{spesa}/attachments/{attachment}', [SpesaController::class, 'destroyAttachment'])->name('spese.attachments.destroy');
 
     // Rimborsi spese (richiesta → approvazione con contabilizzazione automatica)
     Route::post('expense-refunds/{expense_refund}/approva', [ExpenseRefundController::class, 'approva'])->name('expense-refunds.approva')->middleware('role:admin,contabile');
