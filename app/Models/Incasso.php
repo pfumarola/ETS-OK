@@ -13,6 +13,7 @@ class Incasso extends Model
 {
     public const TYPE_QUOTA = 'quota';
     public const TYPE_DONAZIONE = 'donazione';
+    public const TYPE_ALTRO = 'altro';
 
     protected $table = 'incassi';
 

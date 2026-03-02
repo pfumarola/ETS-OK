@@ -63,6 +63,16 @@ function submitRegenerate() {
                     <div><dt class="text-sm text-gray-500 dark:text-gray-400">Tipo</dt><dd>{{ receipt.type }}</dd></div>
                 </dl>
             </div>
+
+            <div v-if="receipt.file_path" class="mt-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Anteprima</h3>
+                <iframe
+                    :src="route('receipts.download', receipt.id) + '?inline=1'"
+                    class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    style="min-height: 60vh;"
+                    title="Anteprima PDF ricevuta"
+                />
+            </div>
         </div>
 
         <DialogModal :show="showEmailModal" @close="showEmailModal = false">

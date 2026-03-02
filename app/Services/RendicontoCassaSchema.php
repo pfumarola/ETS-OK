@@ -30,6 +30,8 @@ class RendicontoCassaSchema
 
     protected static ?array $selectableVoicesUscita = null;
 
+    protected static ?array $selectableVoicesEntrata = null;
+
     protected static ?array $macroAreasForSelectUscita = null;
 
     /**
@@ -163,6 +165,32 @@ class RendicontoCassaSchema
     public static function getValidCodesUscita(): array
     {
         return array_map(fn ($v) => $v['code'], self::getSelectableVoicesUscita());
+    }
+
+    /**
+     * Elenco piatto delle voci selezionabili di tipo entrata (per incasso generico).
+     * Stessa struttura di getSelectableVoices() ma filtrata a tipo === 'entrata'.
+     */
+    public static function getSelectableVoicesEntrata(): array
+    {
+        if (self::$selectableVoicesEntrata !== null) {
+            return self::$selectableVoicesEntrata;
+        }
+
+        self::$selectableVoicesEntrata = array_values(array_filter(
+            self::getSelectableVoices(),
+            fn ($v) => ($v['tipo'] ?? '') === 'entrata'
+        ));
+
+        return self::$selectableVoicesEntrata;
+    }
+
+    /**
+     * Codici validi solo per voci di entrata (per validazione incasso tipo altro).
+     */
+    public static function getValidCodesEntrata(): array
+    {
+        return array_map(fn ($v) => $v['code'], self::getSelectableVoicesEntrata());
     }
 
     /**
