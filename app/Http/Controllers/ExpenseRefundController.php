@@ -163,9 +163,22 @@ class ExpenseRefundController extends Controller
         $expenseRefund->load(['member', 'refundItems', 'receipt', 'primaNotaEntries', 'attachments']);
         $canApprove = $user->hasRole('admin') || $user->hasRole('contabile');
 
+        $rendicontoVociUscita = [];
+        if ($canApprove) {
+            $voci = RendicontoCassaSchema::getSelectableVoicesUscita();
+            foreach ($voci as $v) {
+                $rendicontoVociUscita[] = [
+                    'code' => $v['code'],
+                    'label' => RendicontoCassaSchema::getLabelForCode($v['code']),
+                ];
+            }
+        }
+
         return Inertia::render('ExpenseRefunds/Show', [
             'refund' => $expenseRefund,
             'canApprove' => $canApprove,
+            'rendicontoVociUscita' => $rendicontoVociUscita,
+            'defaultRendicontoCode' => RendicontoCassaSchema::CODE_RIMBORSI,
             'uploadMaxFileSizeHuman' => self::uploadMaxFileSizeHuman(),
         ]);
     }
@@ -332,6 +345,12 @@ class ExpenseRefundController extends Controller
             ]);
         }
 
+        $validCodesUscita = RendicontoCassaSchema::getValidCodesUscita();
+        $rendicontoCode = $request->input('rendiconto_code', RendicontoCassaSchema::CODE_RIMBORSI);
+        if (! in_array($rendicontoCode, $validCodesUscita, true)) {
+            return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Voce contabile non valida.']);
+        }
+
         $ref = 'Rimborso spese #' . $expenseRefund->id;
         foreach ($expenseRefund->refundItems as $item) {
             $description = trim((string) $item->description) !== ''
@@ -344,7 +363,7 @@ class ExpenseRefundController extends Controller
             }
             PrimaNotaEntry::create([
                 'conto_id' => $contoId,
-                'rendiconto_code' => RendicontoCassaSchema::CODE_RIMBORSI,
+                'rendiconto_code' => $rendicontoCode,
                 'entryable_type' => ExpenseRefund::class,
                 'entryable_id' => $expenseRefund->id,
                 'date' => $expenseRefund->refund_date,
