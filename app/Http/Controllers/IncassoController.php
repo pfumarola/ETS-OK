@@ -80,6 +80,28 @@ class IncassoController extends Controller
         ]);
     }
 
+    /**
+     * Elenco incassi generici (solo type = altro).
+     */
+    public function indexIncassiGenerici(Request $request)
+    {
+        $query = Incasso::with(['member', 'conto', 'receipt'])
+            ->where('type', Incasso::TYPE_ALTRO);
+
+        if ($request->filled('from')) {
+            $query->whereDate('paid_at', '>=', $request->from);
+        }
+        if ($request->filled('to')) {
+            $query->whereDate('paid_at', '<=', $request->to);
+        }
+
+        $incassi = $query->orderByDesc('paid_at')->paginate(20)->withQueryString();
+        return Inertia::render('IncassiGenerici/Index', [
+            'incassi' => $incassi,
+            'filters' => $request->only('from', 'to'),
+        ]);
+    }
+
     public function create(Request $request)
     {
         $preselectedType = $request->get('type', 'quota');
@@ -237,7 +259,7 @@ class IncassoController extends Controller
         }
 
         $route = $incasso->type === Incasso::TYPE_DONAZIONE ? 'donazioni.index'
-            : ($incasso->type === Incasso::TYPE_ALTRO ? 'donazioni.index' : 'quote-sociali.index');
+            : ($incasso->type === Incasso::TYPE_ALTRO ? 'incassi-generici.index' : 'quote-sociali.index');
         return redirect()->route($route)->with('flash', ['type' => 'success', 'message' => 'Incasso registrato.']);
     }
 

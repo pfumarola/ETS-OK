@@ -136,6 +136,7 @@ Route::middleware([
     // Quote sociali e erogazioni liberali (pagine distinte); create/show condivisi
     Route::get('quote-sociali', [IncassoController::class, 'indexQuote'])->name('quote-sociali.index');
     Route::get('donazioni', [IncassoController::class, 'indexDonazioni'])->name('donazioni.index');
+    Route::get('incassi-generici', [IncassoController::class, 'indexIncassiGenerici'])->name('incassi-generici.index');
     Route::get('incassi', [IncassoController::class, 'index'])->name('incassi.index'); // redirect a quote-sociali.index
     Route::get('incassi/create', [IncassoController::class, 'create'])->name('incassi.create');
     Route::post('incassi', [IncassoController::class, 'store'])->name('incassi.store');

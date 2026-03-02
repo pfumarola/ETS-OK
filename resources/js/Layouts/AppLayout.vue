@@ -58,7 +58,7 @@ const openSections = ref({
 function sectionForRoute(name) {
     if (!name) return null;
     if (name.startsWith('members.') || name.startsWith('libro-soci.') || name.startsWith('member-types.')) return 'soci';
-    if (name.startsWith('incassi.') || name.startsWith('quote-sociali.') || name.startsWith('donazioni.') || name.startsWith('receipts.') || name.startsWith('spese.') || name.startsWith('expense-refunds.')) return 'cassa';
+    if (name.startsWith('incassi.') || name.startsWith('incassi-generici.') || name.startsWith('quote-sociali.') || name.startsWith('donazioni.') || name.startsWith('receipts.') || name.startsWith('spese.') || name.startsWith('expense-refunds.')) return 'cassa';
     if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.') || name.startsWith('email-templates.')) return 'documenti';
     if (name.startsWith('organi.') || name.startsWith('elezioni.')) return 'organiVotazioni';
     if (name.startsWith('events.') || name.startsWith('properties.') || name.startsWith('items.') || name.startsWith('locations.') || name.startsWith('warehouses.')) return 'patrimonio';
@@ -325,7 +325,7 @@ const logout = () => {
                                         <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
                                         Erogazioni liberali
                                     </ResponsiveNavLink>
-                                    <ResponsiveNavLink :href="route('incassi.create', { type: 'altro' })" :active="route().current('incassi.create') && $page.props.preselectedType === 'altro'">
+                                    <ResponsiveNavLink :href="route('incassi-generici.index')" :active="route().current('incassi-generici.*') || (route().current('incassi.create') && $page.props.preselectedType === 'altro')">
                                         <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
                                         Incasso generico
                                     </ResponsiveNavLink>
@@ -524,7 +524,7 @@ const logout = () => {
                                                 <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
                                                 Erogazioni liberali
                                             </NavLink>
-                                            <NavLink :href="route('incassi.create', { type: 'altro' })" :active="route().current('incassi.create') && $page.props.preselectedType === 'altro'">
+                                            <NavLink :href="route('incassi-generici.index')" :active="route().current('incassi-generici.*') || (route().current('incassi.create') && $page.props.preselectedType === 'altro')">
                                                 <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
                                                 Incasso generico
                                             </NavLink>
