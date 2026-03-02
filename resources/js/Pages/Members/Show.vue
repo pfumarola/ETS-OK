@@ -1,5 +1,5 @@
 <script setup>
-import { PencilSquareIcon, ArrowLeftIcon, TrashIcon, PlusIcon, BanknotesIcon } from '@heroicons/vue/24/outline';
+import { PencilSquareIcon, ArrowLeftIcon, TrashIcon, PlusIcon, BanknotesIcon, EyeIcon } from '@heroicons/vue/24/outline';
 import { ref, computed } from 'vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -18,6 +18,7 @@ const authMember = computed(() => page.props?.authMember ?? null);
 const isOwnProfile = computed(() => authMember.value && Number(authMember.value.id) === Number(props.member.id));
 const canEdit = computed(() => canManage.value || isOwnProfile.value);
 const hasPersoQualita = computed(() => ['decesso', 'dimesso', 'escluso', 'moroso'].includes(props.member.stato));
+const quoteVersate = computed(() => (props.member.incassi || []).filter(i => i.type === 'quota'));
 
 const enableAccess = () => {
     router.post(route('members.enable-access', props.member.id), {}, { preserveScroll: true });
@@ -139,6 +140,36 @@ const submitEsclusione = () => {
                     <div class="sm:col-span-2"><dt class="text-sm text-gray-500 dark:text-gray-400">Indirizzo</dt><dd>{{ member.indirizzo || '—' }}</dd></div>
                     <div v-if="member.note" class="sm:col-span-2"><dt class="text-sm text-gray-500 dark:text-gray-400">Note</dt><dd class="whitespace-pre-wrap">{{ member.note }}</dd></div>
                 </dl>
+            </div>
+
+            <!-- Quote sociali versate -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Quote sociali versate</h3>
+                <template v-if="quoteVersate.length">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Importo</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Conto</th>
+                                <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <tr v-for="inc in quoteVersate" :key="inc.id">
+                                <td class="px-4 py-2">{{ inc.paid_at ? new Date(inc.paid_at).toLocaleDateString('it-IT') : '—' }}</td>
+                                <td class="px-4 py-2 text-right">€ {{ Number(inc.amount).toFixed(2) }}</td>
+                                <td class="px-4 py-2">{{ inc.conto?.name ?? '—' }}</td>
+                                <td class="px-4 py-2 text-right">
+                                    <Link :href="route('incassi.show', inc.id)" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+                                        <EyeIcon class="size-4" aria-hidden="true" />Dettaglio
+                                    </Link>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </template>
+                <p v-else class="text-gray-500 dark:text-gray-400 text-sm py-2">Nessuna quota registrata.</p>
             </div>
 
             <!-- Accesso area soci (solo staff, solo socio attivo) -->
