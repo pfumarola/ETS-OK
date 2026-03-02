@@ -72,7 +72,7 @@ class AttachmentController extends Controller
 
         $path = Storage::disk($attachment->disk)->path($attachment->file_path);
         $mime = $attachment->mime_type ?: 'application/octet-stream';
-        $disposition = str_starts_with($mime, 'image/') ? 'inline' : 'attachment';
+        $disposition = (str_starts_with($mime, 'image/') || $mime === 'application/pdf') ? 'inline' : 'attachment';
         $filename = $attachment->original_name;
 
         return response()->file($path, [

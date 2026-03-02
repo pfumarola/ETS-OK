@@ -1,9 +1,9 @@
 <script setup>
 import { computed } from 'vue';
-import { PencilSquareIcon, ArrowLeftIcon, TrashIcon, PaperClipIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline';
+import { PencilSquareIcon, ArrowLeftIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
+import AttachmentsPanel from '@/Components/AttachmentsPanel.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
 
@@ -18,12 +18,6 @@ const deleteDocument = () => {
     if (!confirm('Eliminare questo documento?')) return;
     if (!documentId.value) return;
     router.delete(route('documents.destroy', { document: documentId.value }), { onSuccess: () => router.visit(route('documents.index')) });
-};
-
-const formatSize = (bytes) => {
-    if (bytes == null || bytes < 1024) return (bytes ?? 0) + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
 
 const removeAttachment = (attachment) => {
@@ -61,7 +55,7 @@ const attachmentError = computed(() => {
             </div>
         </template>
 
-        <div class="py-6 max-w-3xl mx-auto sm:px-6 space-y-6">
+        <div class="py-6 max-w-7xl mx-auto sm:px-6 space-y-6">
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <dt class="text-gray-500 dark:text-gray-400">Data</dt>
@@ -76,32 +70,14 @@ const attachmentError = computed(() => {
                 <p v-else class="pt-4 border-t border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 text-sm">Nessun contenuto.</p>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <PaperClipIcon class="size-5" aria-hidden="true" />
-                    Allegati
-                </h3>
-                <ul v-if="document.attachments?.length" class="space-y-2 mb-4">
-                    <li v-for="a in document.attachments" :key="a.id" class="flex items-center justify-between gap-2 py-2 border-b border-gray-200 dark:border-gray-600 last:border-0">
-                        <a :href="route('attachments.show', a.id)" target="_blank" class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:underline flex-1 min-w-0">
-                            <ArrowDownTrayIcon class="size-4 shrink-0" aria-hidden="true" />
-                            <span class="truncate">{{ a.original_name }}</span>
-                            <span class="text-sm text-gray-500 dark:text-gray-400 shrink-0">{{ formatSize(a.size) }}</span>
-                        </a>
-                        <button type="button" @click="removeAttachment(a)" class="text-red-600 hover:underline shrink-0 flex items-center gap-1" title="Elimina">
-                            <TrashIcon class="size-4" aria-hidden="true" />Elimina
-                        </button>
-                    </li>
-                </ul>
-                <p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nessun allegato.</p>
-                <p v-if="attachmentError" class="text-sm text-red-600 dark:text-red-400 mb-2">{{ attachmentError }}</p>
-                <form :action="route('documents.attachments.store', { document: document.id })" method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
-                    <input type="hidden" name="_token" :value="$page.props.csrf_token" />
-                    <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx" required class="text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-gray-100 file:text-gray-700 dark:file:bg-gray-700 dark:file:text-gray-300" />
-                    <PrimaryButton type="submit">Carica allegato</PrimaryButton>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Max {{ uploadMaxFileSizeHuman }}. Formati: PDF, immagini, Word, Excel.</span>
-                </form>
-            </div>
+            <AttachmentsPanel
+                :attachments="document.attachments ?? []"
+                :can-edit="true"
+                :store-action="route('documents.attachments.store', { document: document.id })"
+                :upload-max-file-size-human="uploadMaxFileSizeHuman"
+                :error="attachmentError"
+                @remove="removeAttachment"
+            />
         </div>
     </AppLayout>
 </template>
