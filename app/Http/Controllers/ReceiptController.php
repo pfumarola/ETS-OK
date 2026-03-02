@@ -55,14 +55,24 @@ class ReceiptController extends Controller
 
     /**
      * Download del file PDF della ricevuta.
+     * Con ?inline=1 restituisce Content-Disposition: inline per anteprima nel browser.
      */
-    public function download(Receipt $receipt)
+    public function download(Request $request, Receipt $receipt)
     {
         if (! $receipt->file_path || ! Storage::disk('local')->exists($receipt->file_path)) {
             abort(404, 'File non trovato.');
         }
         $safeNumber = str_replace(['/', '\\'], '-', $receipt->number);
         $filename = 'ricevuta-' . $safeNumber . '.pdf';
+        $path = Storage::disk('local')->path($receipt->file_path);
+
+        if ($request->boolean('inline')) {
+            return response()->file($path, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        }
+
         return Storage::disk('local')->download($receipt->file_path, $filename, ['Content-Type' => 'application/pdf']);
     }
 

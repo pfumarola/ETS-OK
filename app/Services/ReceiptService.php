@@ -34,6 +34,8 @@ class ReceiptService
         $issuedAt = $incasso->paid_at->toDateString();
         if ($incasso->type === Incasso::TYPE_DONAZIONE) {
             $causale = $incasso->description ?: Settings::get('causale_default_donazione', 'Erogazione liberale');
+        } elseif ($incasso->type === Incasso::TYPE_ALTRO) {
+            $causale = $incasso->description;
         } else {
             $baseQuota = Settings::get('causale_default_quota', 'Quota associativa');
             $causale = $incasso->description ?: ($incasso->subscription ? $baseQuota . ' ' . $incasso->subscription->year : $baseQuota);
@@ -106,6 +108,8 @@ class ReceiptService
             $amount = $receivable->amount;
             if ($receivable->type === Incasso::TYPE_DONAZIONE) {
                 $causale = $receivable->description ?: Settings::get('causale_default_donazione', 'Erogazione liberale');
+            } elseif ($receivable->type === Incasso::TYPE_ALTRO) {
+                $causale = $receivable->description;
             } else {
                 $baseQuota = Settings::get('causale_default_quota', 'Quota associativa');
                 $causale = $receivable->description ?: ($receivable->subscription ? $baseQuota . ' ' . $receivable->subscription->year : $baseQuota);

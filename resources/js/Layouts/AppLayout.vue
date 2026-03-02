@@ -325,6 +325,10 @@ const logout = () => {
                                         <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
                                         Erogazioni liberali
                                     </ResponsiveNavLink>
+                                    <ResponsiveNavLink :href="route('incassi.create', { type: 'altro' })" :active="route().current('incassi.create') && $page.props.preselectedType === 'altro'">
+                                        <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
+                                        Incasso generico
+                                    </ResponsiveNavLink>
                                     <ResponsiveNavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
                                         <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
                                         Ricevute
@@ -519,6 +523,10 @@ const logout = () => {
                                             <NavLink :href="route('donazioni.index')" :active="route().current('donazioni.*')">
                                                 <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
                                                 Erogazioni liberali
+                                            </NavLink>
+                                            <NavLink :href="route('incassi.create', { type: 'altro' })" :active="route().current('incassi.create') && $page.props.preselectedType === 'altro'">
+                                                <CreditCardIcon class="size-4 shrink-0" aria-hidden="true" />
+                                                Incasso generico
                                             </NavLink>
                                             <NavLink :href="route('receipts.index')" :active="route().current('receipts.*')">
                                                 <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />

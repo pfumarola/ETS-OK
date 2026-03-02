@@ -21,6 +21,7 @@ const props = defineProps({
     quota_annuale: [Number, String],
     causale_default_quota: { type: String, default: 'Quota associativa' },
     causale_default_donazione: { type: String, default: 'Erogazione liberale' },
+    rendicontoVociEntrata: { type: Array, default: () => [] },
 });
 
 const page = usePage();
@@ -28,14 +29,15 @@ const showConfirmAnnoPrecedenteModal = ref(false);
 
 const form = useForm({
     type: props.preselectedType,
-    donor_mode: props.preselectedType === 'donazione' ? (props.preselectedMember?.id ? 'member' : 'manual') : 'member',
-    member_id: props.preselectedMember?.id ?? (props.preselectedType === 'donazione' ? '' : ''),
+    donor_mode: props.preselectedType === 'donazione' || props.preselectedType === 'altro' ? (props.preselectedMember?.id ? 'member' : 'manual') : 'member',
+    member_id: props.preselectedMember?.id ?? (props.preselectedType === 'donazione' || props.preselectedType === 'altro' ? '' : ''),
     donor_name: '',
-    subscription_id: props.preselectedType === 'donazione' ? '' : (props.preselectedSubscriptionId ?? ''),
+    subscription_id: props.preselectedType === 'donazione' || props.preselectedType === 'altro' ? '' : (props.preselectedSubscriptionId ?? ''),
     amount: props.preselectedAmount ?? (props.preselectedType === 'quota' && props.quota_annuale != null ? String(Number(props.quota_annuale).toFixed(2)) : ''),
     paid_at: new Date().toISOString().slice(0, 10),
     conto_id: props.conti?.length ? props.conti[0].id : '',
-    description: props.preselectedType === 'donazione' ? (props.causale_default_donazione ?? 'Erogazione liberale') : (props.preselectedDescription ?? props.causale_default_quota ?? ''),
+    description: props.preselectedType === 'altro' ? '' : (props.preselectedType === 'donazione' ? (props.causale_default_donazione ?? 'Erogazione liberale') : (props.preselectedDescription ?? props.causale_default_quota ?? '')),
+    rendiconto_code: '',
     issue_receipt: true,
     genera_prima_nota: true,
     confirm_anno_precedente: false,
@@ -47,22 +49,42 @@ const subscriptionsForMember = computed(() => {
     return m?.subscriptions ?? [];
 });
 
-/** Al cambio tipo incasso imposta la causale di default da settings. */
+/** Al cambio tipo incasso imposta la causale di default da settings (per quota/donazione); per altro lascia description. */
 watch(() => form.type, (newType) => {
-    form.description = newType === 'donazione'
-        ? (props.causale_default_donazione ?? 'Erogazione liberale')
-        : (props.causale_default_quota ?? 'Quota associativa');
+    if (newType === 'altro') {
+        form.description = form.description || '';
+    } else {
+        form.description = newType === 'donazione'
+            ? (props.causale_default_donazione ?? 'Erogazione liberale')
+            : (props.causale_default_quota ?? 'Quota associativa');
+    }
 });
 
 watch(() => page.props.flash, (flash) => {
     if (flash?.type === 'confirm_anno_precedente_required') showConfirmAnnoPrecedenteModal.value = true;
 }, { immediate: true });
 
-const submitLabel = computed(() => form.type === 'donazione' ? 'Registra donazione' : 'Registra incasso');
+const pageTitle = computed(() => {
+    if (form.type === 'donazione') return 'Nuova donazione';
+    if (form.type === 'altro') return 'Incasso generico';
+    return 'Nuovo incasso';
+});
+
+const submitLabel = computed(() => {
+    if (form.type === 'donazione') return 'Registra donazione';
+    if (form.type === 'altro') return 'Registra incasso generico';
+    return 'Registra incasso';
+});
+
+const cancelHref = computed(() => {
+    if (props.preselectedType === 'altro' || form.type === 'altro') return route('donazioni.index');
+    if (props.preselectedType === 'donazione') return route('donazioni.index');
+    return route('quote-sociali.index');
+});
 
 function onSubmit(withConfirm = false) {
     const isConfirm = withConfirm === true;
-    if (form.type === 'donazione') {
+    if (form.type === 'donazione' || form.type === 'altro') {
         if (form.donor_mode === 'manual') form.member_id = '';
         else form.donor_name = '';
     }
@@ -77,10 +99,10 @@ function confirmAnnoPrecedenteProceed() {
 </script>
 
 <template>
-    <AppLayout :title="form.type === 'donazione' ? 'Nuova donazione' : 'Nuovo incasso'">
-        <Head :title="form.type === 'donazione' ? 'Nuova donazione' : 'Nuovo incasso'" />
+    <AppLayout :title="pageTitle">
+        <Head :title="pageTitle" />
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ form.type === 'donazione' ? 'Nuova donazione' : 'Nuovo incasso' }}</h2>
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">{{ pageTitle }}</h2>
         </template>
 
         <div class="py-6 max-w-2xl mx-auto sm:px-6">
@@ -90,6 +112,7 @@ function confirmAnnoPrecedenteProceed() {
                     <select id="type" v-model="form.type" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
                         <option value="quota">Quota</option>
                         <option value="donazione">Donazione</option>
+                        <option value="altro">Altro</option>
                     </select>
                 </div>
                 <template v-if="form.type === 'quota'">
@@ -104,7 +127,7 @@ function confirmAnnoPrecedenteProceed() {
                         <InputError class="mt-1" :message="form.errors.member_id" />
                     </div>
                 </template>
-                <template v-else>
+                <template v-else-if="form.type === 'donazione'">
                     <div>
                         <InputLabel value="Donatore" />
                         <div class="mt-1 flex gap-4 items-center">
@@ -139,6 +162,54 @@ function confirmAnnoPrecedenteProceed() {
                         </div>
                     </div>
                 </template>
+                <template v-else-if="form.type === 'altro'">
+                    <div>
+                        <InputLabel for="rendiconto_code" value="Voce di rendiconto *" />
+                        <select id="rendiconto_code" v-model="form.rendiconto_code" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm" required>
+                            <option value="">Seleziona voce</option>
+                            <option v-for="v in rendicontoVociEntrata" :key="v.code" :value="v.code">{{ v.label }}</option>
+                        </select>
+                        <InputError class="mt-1" :message="form.errors.rendiconto_code" />
+                    </div>
+                    <div>
+                        <InputLabel for="description_altro" value="Contenuto ricevuta / Causale *" />
+                        <textarea id="description_altro" v-model="form.description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm" placeholder="Testo che apparirà sulla ricevuta" required></textarea>
+                        <InputError class="mt-1" :message="form.errors.description" />
+                    </div>
+                    <div>
+                        <InputLabel value="Destinatario (opzionale)" />
+                        <div class="mt-1 flex gap-4 items-center">
+                            <label class="inline-flex items-center">
+                                <input v-model="form.donor_mode" type="radio" value="member" class="rounded border-gray-300 dark:border-gray-700" />
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Da anagrafica</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input v-model="form.donor_mode" type="radio" value="manual" class="rounded border-gray-300 dark:border-gray-700" />
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Inserisci a mano</span>
+                            </label>
+                        </div>
+                        <div v-if="form.donor_mode === 'member'" class="mt-2">
+                            <SearchableMemberSelect
+                                id="member_id_altro"
+                                v-model="form.member_id"
+                                :members="members"
+                                placeholder="Seleziona socio/destinatario"
+                                empty-option="Nessuno"
+                            />
+                            <InputError class="mt-1" :message="form.errors.member_id" />
+                        </div>
+                        <div v-else class="mt-2">
+                            <TextInput
+                                id="donor_name_altro"
+                                v-model="form.donor_name"
+                                type="text"
+                                class="block w-full"
+                                placeholder="Nome e cognome del destinatario (opzionale)"
+                            />
+                            <InputError class="mt-1" :message="form.errors.donor_name" />
+                        </div>
+                    </div>
+                </template>
                 <div v-if="form.type === 'quota' && subscriptionsForMember.length" class="subscription-block">
                     <InputLabel for="subscription_id" value="Iscrizione (opzionale)" />
                     <select id="subscription_id" v-model="form.subscription_id" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm">
@@ -165,7 +236,7 @@ function confirmAnnoPrecedenteProceed() {
                     </select>
                     <InputError class="mt-1" :message="form.errors.conto_id" />
                 </div>
-                <div>
+                <div v-if="form.type !== 'altro'">
                     <InputLabel for="description" value="Causale / Descrizione" />
                     <TextInput id="description" v-model="form.description" class="mt-1 block w-full" :placeholder="form.type === 'donazione' ? (causale_default_donazione || 'Erogazione liberale') : (causale_default_quota || 'Quota associativa')" />
                 </div>
@@ -173,13 +244,13 @@ function confirmAnnoPrecedenteProceed() {
                     <input id="genera_prima_nota" v-model="form.genera_prima_nota" type="checkbox" class="rounded border-gray-300 dark:border-gray-700 shadow-sm" />
                     <label for="genera_prima_nota" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Genera movimento in prima nota</label>
                 </div>
-                <div v-if="form.type === 'quota' || form.member_id || (form.type === 'donazione' && form.donor_name)" class="flex items-center">
+                <div v-if="form.type === 'quota' || form.member_id || (form.type === 'donazione' && form.donor_name) || (form.type === 'altro' && (form.member_id || form.donor_name))" class="flex items-center">
                     <input id="issue_receipt" v-model="form.issue_receipt" type="checkbox" class="rounded border-gray-300 dark:border-gray-700 shadow-sm" />
                     <label for="issue_receipt" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Emetti ricevuta</label>
                 </div>
                 <div class="flex gap-2">
                     <PrimaryButton type="submit" :disabled="form.processing"><CheckIcon class="size-4 me-2" aria-hidden="true" />{{ submitLabel }}</PrimaryButton>
-                    <Link :href="preselectedType === 'donazione' ? route('donazioni.index') : route('quote-sociali.index')" class="inline-flex items-center gap-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700"><ArrowLeftIcon class="size-4 me-1" aria-hidden="true" />Annulla</Link>
+                    <Link :href="cancelHref" class="inline-flex items-center gap-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-gray-700"><ArrowLeftIcon class="size-4 me-1" aria-hidden="true" />Annulla</Link>
                 </div>
             </form>
         </div>

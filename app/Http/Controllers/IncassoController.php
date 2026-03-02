@@ -83,7 +83,7 @@ class IncassoController extends Controller
     public function create(Request $request)
     {
         $preselectedType = $request->get('type', 'quota');
-        if (! in_array($preselectedType, ['quota', 'donazione'], true)) {
+        if (! in_array($preselectedType, ['quota', 'donazione', 'altro'], true)) {
             $preselectedType = 'quota';
         }
         $memberId = $request->get('member_id');
@@ -106,12 +106,22 @@ class IncassoController extends Controller
         if ($preselectedDescription === null && $preselectedType === 'quota') {
             $preselectedDescription = $causaleDefaultQuota;
         }
+        if ($preselectedType === 'altro') {
+            $preselectedDescription = '';
+        }
         $conti = Conto::attivi()->ordered()->get(['id', 'name', 'code']);
         if ($conti->isEmpty()) {
             return redirect()->route('quote-sociali.index')->with('flash', [
                 'type' => 'warning',
                 'message' => 'Nessun conto tesoreria attivo. Creare almeno un conto prima di registrare incassi.',
             ]);
+        }
+        $rendicontoVociEntrata = [];
+        foreach (RendicontoCassaSchema::getSelectableVoicesEntrata() as $v) {
+            $rendicontoVociEntrata[] = [
+                'code' => $v['code'],
+                'label' => RendicontoCassaSchema::getLabelForCode($v['code']),
+            ];
         }
         return Inertia::render('Incassi/Create', [
             'members' => Member::with('subscriptions')->orderBy('cognome')->orderBy('nome')->get(['id', 'nome', 'cognome']),
@@ -124,13 +134,14 @@ class IncassoController extends Controller
             'quota_annuale' => $quotaAmount,
             'causale_default_quota' => $causaleDefaultQuota,
             'causale_default_donazione' => $causaleDefaultDonazione,
+            'rendicontoVociEntrata' => $rendicontoVociEntrata,
         ]);
     }
 
     public function store(Request $request, ReceiptService $receiptService)
     {
         $rules = [
-            'type' => 'required|in:quota,donazione',
+            'type' => 'required|in:quota,donazione,altro',
             'subscription_id' => 'nullable|exists:subscriptions,id',
             'amount' => 'required|numeric|min:0.01',
             'paid_at' => 'required|date',
@@ -146,6 +157,10 @@ class IncassoController extends Controller
             $rules['member_id'] = 'nullable|exists:members,id';
             $rules['donor_name'] = 'nullable|string|max:255';
         }
+        if ($request->input('type') === 'altro') {
+            $rules['rendiconto_code'] = 'required|string|in:' . implode(',', RendicontoCassaSchema::getValidCodesEntrata());
+            $rules['description'] = 'required|string|max:255';
+        }
         $request->validate($rules);
 
         $paidAt = Carbon::parse($request->paid_at);
@@ -158,8 +173,11 @@ class IncassoController extends Controller
             ]);
         }
 
-        $subscriptionId = $request->input('type') === 'donazione' ? null : $request->subscription_id;
-        $donorName = $request->input('type') === 'donazione' ? $request->filled('donor_name') ? trim($request->donor_name) : null : null;
+        $type = $request->input('type');
+        $subscriptionId = $type === 'quota' ? $request->subscription_id : null;
+        $donorName = in_array($type, ['donazione', 'altro'], true) && $request->filled('donor_name')
+            ? trim($request->donor_name)
+            : null;
 
         $incasso = Incasso::create([
             'member_id' => $request->member_id ?: null,
@@ -170,22 +188,33 @@ class IncassoController extends Controller
             'conto_id' => $request->conto_id,
             'description' => $request->description,
             'genera_prima_nota' => $request->boolean('genera_prima_nota', true),
-            'type' => $request->type,
+            'type' => $type,
         ]);
 
         if ($incasso->genera_prima_nota) {
-            $rendicontoCode = $incasso->type === Incasso::TYPE_QUOTA
-                ? RendicontoCassaSchema::CODE_QUOTA
-                : RendicontoCassaSchema::CODE_DONAZIONE;
-            $member = $incasso->member;
-            $desc = $incasso->description;
-            if ($incasso->type === Incasso::TYPE_DONAZIONE) {
-                $desc = $desc ?: ($incasso->donor_name ? 'Erogazione liberale - ' . $incasso->donor_name : 'Erogazione liberale');
+            if ($incasso->type === Incasso::TYPE_ALTRO) {
+                $rendicontoCode = $request->input('rendiconto_code');
+                $member = $incasso->member;
+                $desc = $incasso->description;
+                if ($member) {
+                    $desc = $desc . ' – ' . trim($member->cognome . ' ' . $member->nome);
+                } elseif ($incasso->donor_name) {
+                    $desc = $desc . ' – ' . $incasso->donor_name;
+                }
             } else {
-                $baseDesc = $desc ?: 'Quota associativa';
-                $desc = $member
-                    ? $baseDesc . ' – ' . trim($member->cognome . ' ' . $member->nome)
-                    : $baseDesc;
+                $rendicontoCode = $incasso->type === Incasso::TYPE_QUOTA
+                    ? RendicontoCassaSchema::CODE_QUOTA
+                    : RendicontoCassaSchema::CODE_DONAZIONE;
+                $member = $incasso->member;
+                $desc = $incasso->description;
+                if ($incasso->type === Incasso::TYPE_DONAZIONE) {
+                    $desc = $desc ?: ($incasso->donor_name ? 'Erogazione liberale - ' . $incasso->donor_name : 'Erogazione liberale');
+                } else {
+                    $baseDesc = $desc ?: 'Quota associativa';
+                    $desc = $member
+                        ? $baseDesc . ' – ' . trim($member->cognome . ' ' . $member->nome)
+                        : $baseDesc;
+                }
             }
             PrimaNotaEntry::create([
                 'conto_id' => $incasso->conto_id,
@@ -207,7 +236,8 @@ class IncassoController extends Controller
             }
         }
 
-        $route = $incasso->type === Incasso::TYPE_DONAZIONE ? 'donazioni.index' : 'quote-sociali.index';
+        $route = $incasso->type === Incasso::TYPE_DONAZIONE ? 'donazioni.index'
+            : ($incasso->type === Incasso::TYPE_ALTRO ? 'donazioni.index' : 'quote-sociali.index');
         return redirect()->route($route)->with('flash', ['type' => 'success', 'message' => 'Incasso registrato.']);
     }
 
