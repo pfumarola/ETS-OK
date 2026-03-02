@@ -12,8 +12,12 @@ import TextInput from '@/Components/TextInput.vue';
 const props = defineProps({
     refund: Object,
     canApprove: { type: Boolean, default: false },
+    rendicontoVociUscita: { type: Array, default: () => [] },
+    defaultRendicontoCode: { type: String, default: 'EXP_A_5' },
     uploadMaxFileSizeHuman: { type: String, default: '10 MB' },
 });
+
+const selectedRendicontoCode = ref(props.defaultRendicontoCode || 'EXP_A_5');
 
 const showItemForm = ref(false);
 const newItem = ref({ description: '', amount: '' });
@@ -54,7 +58,8 @@ const approva = (withConfirmAnnoPrecedente = false) => {
         ? 'Contabilizzare questo rimborso? Verranno creati i movimenti in prima nota.'
         : 'Approvare questa richiesta di rimborso?';
     if (!isConfirm && !confirm(msg)) return;
-    const data = isConfirm ? { confirm_anno_precedente: 1 } : {};
+    const data = { rendiconto_code: selectedRendicontoCode.value };
+    if (isConfirm) data.confirm_anno_precedente = 1;
     router.post(route('expense-refunds.approva', props.refund.id), data);
 };
 
@@ -129,15 +134,37 @@ const attachmentError = computed(() => {
             </div>
 
             <!-- Stato richiesta: in attesa di approvazione -->
-            <div v-if="refund.status === 'richiesta'" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex flex-wrap items-center gap-3">
-                <span class="text-amber-800 dark:text-amber-200">In attesa di approvazione.</span>
-                <form v-if="canApprove" @submit.prevent="() => approva()" class="inline">
-                    <PrimaryButton type="submit">Approva</PrimaryButton>
-                </form>
+            <div v-if="refund.status === 'richiesta'" class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
+                <span class="text-amber-800 dark:text-amber-200 block">In attesa di approvazione.</span>
+                <template v-if="canApprove">
+                    <div v-if="rendicontoVociUscita?.length" class="max-w-md">
+                        <InputLabel for="approva_rendiconto_code" value="Voce contabile" />
+                        <select
+                            id="approva_rendiconto_code"
+                            v-model="selectedRendicontoCode"
+                            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                        >
+                            <option v-for="v in rendicontoVociUscita" :key="v.code" :value="v.code">{{ v.label }}</option>
+                        </select>
+                    </div>
+                    <form @submit.prevent="() => approva()" class="inline">
+                        <PrimaryButton type="submit">Approva</PrimaryButton>
+                    </form>
+                </template>
             </div>
             <!-- Stato bozza (creato da staff): contabilizza per registrare in prima nota -->
-            <div v-if="refund.status === 'bozza' && canApprove" class="bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-700 rounded-lg p-4 flex flex-wrap items-center gap-3">
-                <span class="text-slate-700 dark:text-slate-300">Rimborso in bozza. Contabilizza per registrare i movimenti in prima nota.</span>
+            <div v-if="refund.status === 'bozza' && canApprove" class="bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-3">
+                <span class="text-slate-700 dark:text-slate-300 block">Rimborso in bozza. Contabilizza per registrare i movimenti in prima nota.</span>
+                <div v-if="rendicontoVociUscita?.length" class="max-w-md">
+                    <InputLabel for="contabilizza_rendiconto_code" value="Voce contabile" />
+                    <select
+                        id="contabilizza_rendiconto_code"
+                        v-model="selectedRendicontoCode"
+                        class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 shadow-sm"
+                    >
+                        <option v-for="v in rendicontoVociUscita" :key="v.code" :value="v.code">{{ v.label }}</option>
+                    </select>
+                </div>
                 <form @submit.prevent="() => approva()" class="inline">
                     <PrimaryButton type="submit">Contabilizza</PrimaryButton>
                 </form>
