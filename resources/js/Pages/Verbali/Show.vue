@@ -1,8 +1,9 @@
 <script setup>
 import { computed } from 'vue';
-import { PencilSquareIcon, ArrowLeftIcon, TrashIcon, PaperClipIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline';
+import { PencilSquareIcon, ArrowLeftIcon, TrashIcon, ArrowDownTrayIcon } from '@heroicons/vue/24/outline';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import AttachmentsPanel from '@/Components/AttachmentsPanel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import DangerButton from '@/Components/DangerButton.vue';
@@ -32,12 +33,6 @@ const confermaVerbale = () => {
     if (!confirm('Confermare il verbale? Non sarà più modificabile.')) return;
     if (verbaleId.value == null) return;
     router.post(route('verbali.conferma', { verbale: verbaleId.value }));
-};
-
-const formatSize = (bytes) => {
-    if (bytes == null || bytes < 1024) return (bytes ?? 0) + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 };
 
 const removeAttachment = (attachment) => {
@@ -76,7 +71,7 @@ const attachmentError = computed(() => {
             </div>
         </template>
 
-        <div class="py-6 max-w-3xl mx-auto sm:px-6 space-y-6">
+        <div class="py-6 max-w-7xl mx-auto sm:px-6 space-y-6">
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div><dt class="text-gray-500 dark:text-gray-400">Stato</dt><dd><span class="px-2 py-0.5 rounded text-xs font-medium" :class="verbale.stato === 'confermato' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'">{{ verbale.stato === 'confermato' ? 'Confermato' : 'Bozza' }}</span></dd></div>
@@ -93,35 +88,21 @@ const attachmentError = computed(() => {
             </div>
 
             <!-- Allegati -->
-            <div v-if="showAttachmentsSection()" class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <PaperClipIcon class="size-5" aria-hidden="true" />
-                    Allegati
-                </h3>
-                <p v-if="canEditAttachments" class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                    Puoi scaricare il verbale in PDF (pulsante «Scarica PDF» in alto), firmarlo sul computer e ricaricarlo qui come allegato.
-                </p>
-                <ul v-if="verbale.attachments?.length" class="space-y-2 mb-4">
-                    <li v-for="a in verbale.attachments" :key="a.id" class="flex items-center justify-between gap-2 py-2 border-b border-gray-200 dark:border-gray-600 last:border-0">
-                        <a :href="route('attachments.show', a.id)" target="_blank" class="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:underline flex-1 min-w-0">
-                            <ArrowDownTrayIcon class="size-4 shrink-0" aria-hidden="true" />
-                            <span class="truncate">{{ a.original_name }}</span>
-                            <span class="text-sm text-gray-500 dark:text-gray-400 shrink-0">{{ formatSize(a.size) }}</span>
-                        </a>
-                        <button v-if="canEditAttachments" type="button" @click="removeAttachment(a)" class="text-red-600 hover:underline shrink-0 flex items-center gap-1" title="Elimina">
-                            <TrashIcon class="size-4" aria-hidden="true" />Elimina
-                        </button>
-                    </li>
-                </ul>
-                <p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-4">Nessun allegato.</p>
-                <p v-if="attachmentError" class="text-sm text-red-600 dark:text-red-400 mb-2">{{ attachmentError }}</p>
-                <form v-if="canEditAttachments" :action="route('verbali.attachments.store', { verbale: verbale.id })" method="post" enctype="multipart/form-data" class="flex flex-wrap items-center gap-2">
-                    <input type="hidden" name="_token" :value="$page.props.csrf_token" />
-                    <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx" required class="text-sm text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-gray-100 file:text-gray-700 dark:file:bg-gray-700 dark:file:text-gray-300" />
-                    <PrimaryButton type="submit">Carica allegato</PrimaryButton>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">Max {{ uploadMaxFileSizeHuman }}. Formati: PDF, immagini, Word, Excel.</span>
-                </form>
-            </div>
+            <AttachmentsPanel
+                v-if="showAttachmentsSection()"
+                :attachments="verbale.attachments ?? []"
+                :can-edit="canEditAttachments"
+                :store-action="route('verbali.attachments.store', { verbale: verbale.id })"
+                :upload-max-file-size-human="uploadMaxFileSizeHuman"
+                :error="attachmentError"
+                @remove="removeAttachment"
+            >
+                <template v-if="canEditAttachments" #hint>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Puoi scaricare il verbale in PDF (pulsante «Scarica PDF» in alto), firmarlo sul computer e ricaricarlo qui come allegato.
+                    </p>
+                </template>
+            </AttachmentsPanel>
         </div>
     </AppLayout>
 </template>
