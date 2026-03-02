@@ -50,7 +50,10 @@ watch(() => page.props.flash, (flash) => {
 
 const approva = (withConfirmAnnoPrecedente = false) => {
     const isConfirm = withConfirmAnnoPrecedente === true;
-    if (!isConfirm && !confirm('Approvare questa richiesta di rimborso?')) return;
+    const msg = props.refund.status === 'bozza'
+        ? 'Contabilizzare questo rimborso? Verranno creati i movimenti in prima nota.'
+        : 'Approvare questa richiesta di rimborso?';
+    if (!isConfirm && !confirm(msg)) return;
     const data = isConfirm ? { confirm_anno_precedente: 1 } : {};
     router.post(route('expense-refunds.approva', props.refund.id), data);
 };
@@ -130,6 +133,13 @@ const attachmentError = computed(() => {
                 <span class="text-amber-800 dark:text-amber-200">In attesa di approvazione.</span>
                 <form v-if="canApprove" @submit.prevent="() => approva()" class="inline">
                     <PrimaryButton type="submit">Approva</PrimaryButton>
+                </form>
+            </div>
+            <!-- Stato bozza (creato da staff): contabilizza per registrare in prima nota -->
+            <div v-if="refund.status === 'bozza' && canApprove" class="bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-700 rounded-lg p-4 flex flex-wrap items-center gap-3">
+                <span class="text-slate-700 dark:text-slate-300">Rimborso in bozza. Contabilizza per registrare i movimenti in prima nota.</span>
+                <form @submit.prevent="() => approva()" class="inline">
+                    <PrimaryButton type="submit">Contabilizza</PrimaryButton>
                 </form>
             </div>
             <!-- Stato approvato: puoi stampare -->
