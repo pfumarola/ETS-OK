@@ -77,7 +77,7 @@ const submitLabel = computed(() => {
 });
 
 const cancelHref = computed(() => {
-    if (props.preselectedType === 'altro' || form.type === 'altro') return route('donazioni.index');
+    if (props.preselectedType === 'altro' || form.type === 'altro') return route('incassi-generici.index');
     if (props.preselectedType === 'donazione') return route('donazioni.index');
     return route('quote-sociali.index');
 });
