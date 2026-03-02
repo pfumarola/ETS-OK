@@ -304,15 +304,20 @@ class ExpenseRefundController extends Controller
     }
 
     /**
-     * Approva una richiesta di rimborso: crea una voce prima nota per ogni riga di spesa e imposta stato contabilizzata.
+     * Approva/contabilizza un rimborso: crea una voce prima nota per ogni riga di spesa e imposta stato contabilizzata.
+     * Accetta sia richieste (socio) sia bozze (create da staff).
      */
     public function approva(Request $request, ExpenseRefund $expenseRefund)
     {
-        if ($expenseRefund->status !== 'richiesta') {
-            return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Solo le richieste in attesa possono essere approvate.']);
+        if (! in_array($expenseRefund->status, ['richiesta', 'bozza'], true)) {
+            return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Solo richieste in attesa o rimborsi in bozza possono essere contabilizzati.']);
         }
 
         $expenseRefund->load(['refundItems', 'member']);
+
+        if ($expenseRefund->refundItems->isEmpty()) {
+            return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Aggiungere almeno una voce di rimborso prima di contabilizzare.']);
+        }
 
         if ($expenseRefund->primaNotaEntries()->exists()) {
             return redirect()->back()->with('flash', ['type' => 'error', 'message' => 'Già contabilizzato.']);
@@ -350,9 +355,14 @@ class ExpenseRefundController extends Controller
             ]);
         }
 
+        $wasRichiesta = $expenseRefund->status === 'richiesta';
         $expenseRefund->update(['status' => 'contabilizzata']);
 
-        return redirect()->route('expense-refunds.show', $expenseRefund)->with('flash', ['type' => 'success', 'message' => 'Rimborso approvato e contabilizzato.']);
+        $message = $wasRichiesta
+            ? 'Rimborso approvato e contabilizzato.'
+            : 'Rimborso contabilizzato. I movimenti sono stati registrati in prima nota.';
+
+        return redirect()->route('expense-refunds.show', $expenseRefund)->with('flash', ['type' => 'success', 'message' => $message]);
     }
 
     /**
