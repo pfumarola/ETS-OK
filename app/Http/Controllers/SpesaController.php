@@ -122,15 +122,13 @@ class SpesaController extends Controller
     public function storeAttachment(Request $request, Spesa $spesa, AttachmentService $attachmentService)
     {
         $maxKb = (int) floor(UploadedFile::getMaxFilesize() / 1024);
-        $appMaxKb = 10240; // 10 MB
-        $limitKb = $maxKb > 0 ? min($appMaxKb, $maxKb) : $appMaxKb;
-        $limitHuman = self::uploadMaxFileSizeHuman();
+        $limitKb = $maxKb > 0 ? $maxKb : 51200; // solo limite PHP; fallback 50 MB se getMaxFilesize() restituisce 0
 
         $request->validate([
             'file' => 'required|file|max:' . $limitKb . '|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx',
         ], [
             'file.required' => 'Seleziona un file da caricare.',
-            'file.max' => 'Il file non deve superare ' . $limitHuman . ' (limite del server).',
+            'file.max' => 'Il file non deve superare ' . self::uploadMaxFileSizeHuman() . ' (limite del server).',
             'file.mimes' => 'Formato non consentito. Usa PDF, immagini, Word o Excel.',
         ]);
 
