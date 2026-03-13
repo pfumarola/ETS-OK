@@ -245,8 +245,7 @@ class VerbaleController extends Controller
         }
 
         $maxKb = (int) floor(UploadedFile::getMaxFilesize() / 1024);
-        $appMaxKb = 10240;
-        $limitKb = $maxKb > 0 ? min($appMaxKb, $maxKb) : $appMaxKb;
+        $limitKb = $maxKb > 0 ? $maxKb : 51200; // solo limite PHP; fallback 50 MB se getMaxFilesize() restituisce 0
 
         $request->validate([
             'file' => 'required|file|max:'.$limitKb.'|mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx',
