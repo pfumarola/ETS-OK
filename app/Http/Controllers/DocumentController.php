@@ -35,7 +35,7 @@ class DocumentController extends Controller
             $query->whereDate('data', '<=', $request->to);
         }
 
-        $documents = $query->paginate(15)->withQueryString();
+        $documents = $query->withCount('attachments')->paginate(15)->withQueryString();
 
         return Inertia::render('Documents/Index', [
             'documents' => $documents,

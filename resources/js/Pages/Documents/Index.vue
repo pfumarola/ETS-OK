@@ -1,5 +1,5 @@
 <script setup>
-import { PlusIcon, EyeIcon, PencilSquareIcon, FunnelIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
+import { PlusIcon, EyeIcon, PencilSquareIcon, FunnelIcon, ArrowLeftIcon, ArrowRightIcon, PaperClipIcon } from '@heroicons/vue/24/outline';
 import { reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -54,6 +54,7 @@ const search = () => router.get(route('documents.index'), form);
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Data</th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Titolo</th>
+                                <th class="px-4 py-2 w-10 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase" title="Allegati"></th>
                                 <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Azioni</th>
                             </tr>
                         </thead>
@@ -61,6 +62,12 @@ const search = () => router.get(route('documents.index'), form);
                             <tr v-for="d in documents.data" :key="d.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                 <td class="px-4 py-2">{{ d.data ? new Date(d.data).toLocaleDateString('it-IT') : '—' }}</td>
                                 <td class="px-4 py-2">{{ d.titolo || '—' }}</td>
+                                <td class="px-4 py-2 text-center">
+                                    <span v-if="d.attachments_count > 0" class="inline-flex text-gray-500 dark:text-gray-400" title="Ha allegati">
+                                        <PaperClipIcon class="size-4" aria-hidden="true" />
+                                    </span>
+                                    <span v-else class="inline-block w-4" aria-hidden="true"></span>
+                                </td>
                                 <td class="px-4 py-2 text-right flex gap-2 justify-end">
                                     <Link :href="route('documents.show', { document: d.id })" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                                         <EyeIcon class="size-4" aria-hidden="true" />Visualizza
