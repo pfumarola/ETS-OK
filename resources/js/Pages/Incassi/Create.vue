@@ -9,6 +9,8 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import SecondaryButton from '@/Components/SecondaryButton.vue';
 import SearchableMemberSelect from '@/Components/SearchableMemberSelect.vue';
 import TextInput from '@/Components/TextInput.vue';
+import RichTextEditor from '@/Components/RichTextEditor.vue';
+import { receiptEditorPlaceholders } from '@/constants/receiptEditorPlaceholders';
 
 const props = defineProps({
     members: Array,
@@ -22,10 +24,22 @@ const props = defineProps({
     causale_default_quota: { type: String, default: 'Quota associativa' },
     causale_default_donazione: { type: String, default: 'Erogazione liberale' },
     rendicontoVociEntrata: { type: Array, default: () => [] },
+    receiptTemplateTexts: { type: Object, default: () => ({}) },
 });
 
 const page = usePage();
 const showConfirmAnnoPrecedenteModal = ref(false);
+
+function normalizeTemplateToHtml(input) {
+    const value = (input || '').trim();
+    if (!value) return '';
+    if (value.includes('<') && value.includes('>')) return value;
+
+    return value
+        .split(/\n{2,}/)
+        .map((chunk) => `<p>${chunk.replace(/\n/g, '<br>')}</p>`)
+        .join('');
+}
 
 const form = useForm({
     type: props.preselectedType,
@@ -41,6 +55,7 @@ const form = useForm({
     issue_receipt: true,
     genera_prima_nota: true,
     confirm_anno_precedente: false,
+    receipt_text_override: normalizeTemplateToHtml(props.receiptTemplateTexts?.[props.preselectedType] ?? ''),
 });
 
 const subscriptionsForMember = computed(() => {
@@ -58,6 +73,7 @@ watch(() => form.type, (newType) => {
             ? (props.causale_default_donazione ?? 'Erogazione liberale')
             : (props.causale_default_quota ?? 'Quota associativa');
     }
+    form.receipt_text_override = normalizeTemplateToHtml(props.receiptTemplateTexts?.[newType] ?? '');
 });
 
 watch(() => page.props.flash, (flash) => {
@@ -244,9 +260,20 @@ function confirmAnnoPrecedenteProceed() {
                     <input id="genera_prima_nota" v-model="form.genera_prima_nota" type="checkbox" class="rounded border-gray-300 dark:border-gray-700 shadow-sm" />
                     <label for="genera_prima_nota" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Genera movimento in prima nota</label>
                 </div>
-                <div v-if="form.type === 'quota' || form.member_id || (form.type === 'donazione' && form.donor_name) || (form.type === 'altro' && (form.member_id || form.donor_name))" class="flex items-center">
+                <div class="flex items-center">
                     <input id="issue_receipt" v-model="form.issue_receipt" type="checkbox" class="rounded border-gray-300 dark:border-gray-700 shadow-sm" />
                     <label for="issue_receipt" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Emetti ricevuta</label>
+                </div>
+                <div v-if="form.issue_receipt">
+                    <InputLabel for="receipt_text_override" value="Testo ricevuta (modificabile)" />
+                    <RichTextEditor
+                        id="receipt_text_override"
+                        v-model="form.receipt_text_override"
+                        placeholder="Testo ricevuta personalizzato (HTML)"
+                        min-height="220px"
+                        :placeholder-items="receiptEditorPlaceholders"
+                    />
+                    <InputError class="mt-1" :message="form.errors.receipt_text_override" />
                 </div>
                 <div class="flex gap-2">
                     <PrimaryButton type="submit" :disabled="form.processing"><CheckIcon class="size-4 me-2" aria-hidden="true" />{{ submitLabel }}</PrimaryButton>

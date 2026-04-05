@@ -25,6 +25,7 @@ class Incasso extends Model
         'paid_at',
         'conto_id',
         'description',
+        'receipt_text_override',
         'receipt_issued_at',
         'genera_prima_nota',
         'type',

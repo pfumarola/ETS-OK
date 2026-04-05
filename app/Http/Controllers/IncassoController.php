@@ -6,6 +6,7 @@ use App\Models\Conto;
 use App\Models\Incasso;
 use App\Models\Member;
 use App\Models\PrimaNotaEntry;
+use App\Models\ReceiptTemplate;
 use App\Models\Settings;
 use App\Models\Subscription;
 use App\Services\ReceiptService;
@@ -157,6 +158,11 @@ class IncassoController extends Controller
             'causale_default_quota' => $causaleDefaultQuota,
             'causale_default_donazione' => $causaleDefaultDonazione,
             'rendicontoVociEntrata' => $rendicontoVociEntrata,
+            'receiptTemplateTexts' => [
+                Incasso::TYPE_QUOTA => ReceiptTemplate::getBodyForTipo('incasso_quota'),
+                Incasso::TYPE_DONAZIONE => ReceiptTemplate::getBodyForTipo('incasso_donazione'),
+                Incasso::TYPE_ALTRO => ReceiptTemplate::getBodyForTipo('incasso_altro'),
+            ],
         ]);
     }
 
@@ -172,6 +178,7 @@ class IncassoController extends Controller
             'issue_receipt' => 'boolean',
             'genera_prima_nota' => 'boolean',
             'confirm_anno_precedente' => 'boolean',
+            'receipt_text_override' => 'nullable|string|max:50000',
         ];
         if ($request->input('type') === 'quota') {
             $rules['member_id'] = 'required|exists:members,id';
@@ -201,6 +208,7 @@ class IncassoController extends Controller
             ? trim($request->donor_name)
             : null;
 
+        $issueReceipt = $request->boolean('issue_receipt');
         $incasso = Incasso::create([
             'member_id' => $request->member_id ?: null,
             'donor_name' => $donorName,
@@ -211,6 +219,7 @@ class IncassoController extends Controller
             'description' => $request->description,
             'genera_prima_nota' => $request->boolean('genera_prima_nota', true),
             'type' => $type,
+            'receipt_text_override' => $issueReceipt ? $request->input('receipt_text_override') : null,
         ]);
 
         if ($incasso->genera_prima_nota) {
@@ -251,9 +260,9 @@ class IncassoController extends Controller
             ]);
         }
 
-        if ($request->boolean('issue_receipt') && ($incasso->member_id || $incasso->donor_name)) {
+        if ($issueReceipt && ($incasso->member_id || $incasso->donor_name)) {
             try {
-                $receiptService->generateForIncasso($incasso);
+                $receiptService->generateForIncasso($incasso, $request->input('receipt_text_override'));
             } catch (\Throwable $e) {
             }
         }

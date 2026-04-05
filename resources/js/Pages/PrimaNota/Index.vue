@@ -8,6 +8,8 @@ import SecondaryButton from '@/Components/SecondaryButton.vue';
 
 const props = defineProps({ entries: Object, rendicontoVoci: Array, filters: Object });
 const page = usePage();
+const showDeleteConfirmModal = ref(false);
+const pendingDeleteId = ref(null);
 const showConfirmDestroyModal = ref(false);
 const entryIdToDestroy = ref(null);
 
@@ -26,8 +28,21 @@ watch(() => page.props.flash, (flash) => {
 
 const search = () => router.get(route('prima-nota.index'), form);
 
-function deleteEntry(id) {
-    router.delete(route('prima-nota.destroy', id));
+function requestDelete(id) {
+    pendingDeleteId.value = id;
+    showDeleteConfirmModal.value = true;
+}
+
+function closeDeleteConfirmModal() {
+    showDeleteConfirmModal.value = false;
+    pendingDeleteId.value = null;
+}
+
+function confirmDeleteProceed() {
+    const id = pendingDeleteId.value;
+    showDeleteConfirmModal.value = false;
+    pendingDeleteId.value = null;
+    if (id) router.delete(route('prima-nota.destroy', id));
 }
 
 function confirmDestroyProceed() {
@@ -104,7 +119,7 @@ function closeConfirmDestroyModal() {
                                     <Link :href="route('prima-nota.edit', e.id)" class="inline-flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                                         <PencilSquareIcon class="size-4" aria-hidden="true" />Modifica
                                     </Link>
-                                    <button type="button" @click="deleteEntry(e.id)" class="inline-flex items-center gap-1 text-sm text-red-600 dark:text-red-400 hover:underline">
+                                    <button type="button" @click="requestDelete(e.id)" class="inline-flex items-center gap-1 text-sm text-red-600 dark:text-red-400 hover:underline">
                                         <TrashIcon class="size-4" aria-hidden="true" />Elimina
                                     </button>
                                 </td>
@@ -122,6 +137,16 @@ function closeConfirmDestroyModal() {
         </div>
 
         <Teleport to="body">
+            <div v-if="showDeleteConfirmModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6" role="dialog" aria-modal="true" aria-labelledby="delete-confirm-title">
+                    <h3 id="delete-confirm-title" class="text-lg font-medium text-gray-900 dark:text-gray-100">Eliminare il movimento?</h3>
+                    <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Questa azione non può essere annullata.</p>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <SecondaryButton @click="closeDeleteConfirmModal">Annulla</SecondaryButton>
+                        <PrimaryButton class="!bg-red-600 hover:!bg-red-700" @click="confirmDeleteProceed">Elimina</PrimaryButton>
+                    </div>
+                </div>
+            </div>
             <div v-if="showConfirmDestroyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
                     <p class="text-gray-700 dark:text-gray-300">{{ page.props.flash?.message || 'Operazioni su anni precedenti possono alterare i rendiconti già generati. Vuoi procedere?' }}</p>
