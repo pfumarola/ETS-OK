@@ -56,9 +56,13 @@ const props = defineProps({
     modelValue: { type: String, default: '' },
     placeholder: { type: String, default: 'Scrivi qui...' },
     minHeight: { type: String, default: '200px' },
+    /** Se valorizzato, sostituisce il menu placeholder predefinito (verbali/email). */
+    placeholderItems: { type: Array, default: null },
 });
 
 const emit = defineEmits(['update:modelValue']);
+
+const placeholderMenu = computed(() => props.placeholderItems ?? PLACEHOLDERS);
 
 const editor = useEditor({
     content: props.modelValue || '',
@@ -332,7 +336,7 @@ onBeforeUnmount(() => {
                 </button>
                 <div v-show="placeholderDropdownOpen" class="absolute left-0 top-full mt-0.5 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg z-20 min-w-[220px] max-h-[280px] overflow-y-auto">
                     <button
-                        v-for="ph in PLACEHOLDERS"
+                        v-for="ph in placeholderMenu"
                         :key="ph.value"
                         type="button"
                         class="w-full text-left px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"

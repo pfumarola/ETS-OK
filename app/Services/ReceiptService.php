@@ -7,6 +7,7 @@ use App\Models\ExpenseRefund;
 use App\Models\Incasso;
 use App\Models\Member;
 use App\Models\Receipt;
+use App\Models\ReceiptTemplate;
 use App\Models\Settings;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,7 +19,7 @@ class ReceiptService
     /**
      * Genera ricevuta per un incasso. Crea record Receipt e salva PDF su storage.
      */
-    public function generateForIncasso(Incasso $incasso): Receipt
+    public function generateForIncasso(Incasso $incasso, ?string $receiptTextOverride = null): Receipt
     {
         if ($incasso->receipt) {
             return $incasso->receipt;
@@ -51,8 +52,8 @@ class ReceiptService
             'type' => 'liberale',
         ]);
 
-        $isDonazione = $incasso->type === Incasso::TYPE_DONAZIONE;
-        $path = $this->savePdf($receipt, $member, $recipientName, $incasso->amount, $causale, $issuedAt, $isDonazione);
+        $receiptText = $this->buildIncassoReceiptText($incasso, $receipt, $causale, $issuedAt, $receiptTextOverride);
+        $path = $this->savePdf($receipt, $member, $recipientName, $incasso->amount, $causale, $issuedAt, $receiptText);
         $receipt->update(['file_path' => $path]);
         $incasso->update(['receipt_issued_at' => $incasso->paid_at]);
 
@@ -82,7 +83,7 @@ class ReceiptService
             'type' => 'rimborso',
         ]);
 
-        $path = $this->savePdf($receipt, $member, null, $refund->total, $causale, $issuedAt, false);
+        $path = $this->savePdf($receipt, $member, null, $refund->total, $causale, $issuedAt, $causale);
         $receipt->update(['file_path' => $path]);
         $refund->update(['receipt_id' => $receipt->id, 'status' => 'stampata']);
 
@@ -121,8 +122,11 @@ class ReceiptService
             throw new \InvalidArgumentException('Tipo di ricevuta non supportato per la rigenerazione.');
         }
 
-        $isDonazione = $receivable instanceof Incasso && $receivable->type === Incasso::TYPE_DONAZIONE;
-        $path = $this->savePdf($receipt, $member, $recipientName, $amount, $causale, $issuedAt, $isDonazione);
+        $override = $receivable instanceof Incasso ? $receivable->receipt_text_override : null;
+        $receiptText = $receivable instanceof Incasso
+            ? $this->buildIncassoReceiptText($receivable, $receipt, $causale, $issuedAt, $override)
+            : $causale;
+        $path = $this->savePdf($receipt, $member, $recipientName, $amount, $causale, $issuedAt, $receiptText);
         $receipt->update(['file_path' => $path]);
 
         return $receipt->fresh();
@@ -142,9 +146,8 @@ class ReceiptService
     /**
      * @param  Member|null  $member  Socio/donatore in anagrafica (null se donatore inserito a mano)
      * @param  string|null  $recipientName  Nome destinatario per ricevuta senza socio (donatore a mano)
-     * @param  bool  $isDonazione  Se true usa il template RICEVUTA DONAZIONE con diciture art. 83 ETS
      */
-    private function savePdf(Receipt $receipt, ?Member $member, ?string $recipientName, $amount, string $causale, string $issuedAt, bool $isDonazione = false): string
+    private function savePdf(Receipt $receipt, ?Member $member, ?string $recipientName, $amount, string $causale, string $issuedAt, string $receiptHtml = ''): string
     {
         $logoDataUri = Attachment::logoDataUriForPdf();
 
@@ -154,6 +157,7 @@ class ReceiptService
             'recipient_name' => $recipientName,
             'amount' => $amount,
             'causale' => $causale,
+            'receipt_html' => $this->sanitizeReceiptHtml($receiptHtml),
             'issued_at' => $issuedAt,
             'nome_associazione' => Settings::get('nome_associazione', 'Associazione - Ente del Terzo Settore'),
             'indirizzo_associazione' => Settings::get('indirizzo_associazione', ''),
@@ -164,28 +168,129 @@ class ReceiptService
             'logo_data_uri' => $logoDataUri,
         ];
 
-        if ($isDonazione) {
-            $dataRunts = Settings::get('data_iscrizione_runts', '');
-            try {
-                $viewData['data_iscrizione_runts'] = $dataRunts ? \Carbon\Carbon::parse($dataRunts)->format('d/m/Y') : '';
-            } catch (\Throwable $e) {
-                $viewData['data_iscrizione_runts'] = $dataRunts;
-            }
-            $viewData['legale_rappresentante'] = Settings::get('legale_rappresentante_associazione', '');
-            $viewData['ets_è_odv'] = (bool) Settings::get('ets_è_odv', false);
-            $viewData['luogo_emissione'] = Settings::get('luogo_emissione_ricevute', '') ?: Settings::get('indirizzo_associazione', '');
-            $template = 'receipts.template_donazione';
-        } else {
-            $template = 'receipts.template';
-        }
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($template, $viewData);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('receipts.pdf_incasso', $viewData);
         $year = date('Y', strtotime($issuedAt));
         $dir = "media/ricevute/{$year}";
         Storage::disk('local')->makeDirectory($dir);
         $path = "{$dir}/{$receipt->id}-{$year}.pdf";
         Storage::disk('local')->put($path, $pdf->output());
         return $path;
+    }
+
+    private function buildIncassoReceiptText(Incasso $incasso, Receipt $receipt, string $causale, string $issuedAt, ?string $overrideText): string
+    {
+        $member = $incasso->member;
+        $conto = $incasso->conto;
+        $recipientName = $member ? trim($member->cognome . ' ' . $member->nome) : ($incasso->donor_name ?: '');
+        $recipientCf = $member?->codice_fiscale ?: '';
+        $iban = $conto?->iban ?: '';
+        $tipoTemplate = $this->receiptTemplateTipoForIncasso($incasso);
+
+        $replacements = [
+            'nome-associazione' => Settings::get('nome_associazione', config('app.name')),
+            'receipt_number' => $receipt->number,
+            'data' => \Carbon\Carbon::parse($issuedAt)->format('d/m/Y'),
+            'amount' => number_format((float) $incasso->amount, 2, ',', '.'),
+            'causale' => $causale,
+            'recipient_name' => $recipientName,
+            'recipient_cf' => $recipientCf,
+            'iban' => $iban,
+            'anno' => (string) now()->year,
+        ];
+
+        $rendered = ReceiptTemplate::render($tipoTemplate, $replacements, $overrideText);
+        $rendered = PlaceholderResolver::resolve($rendered, ['data' => \Carbon\Carbon::parse($issuedAt)]);
+        $sanitized = $this->sanitizeReceiptHtml($rendered);
+
+        if ($sanitized !== '') {
+            return $sanitized;
+        }
+
+        $fallbackRendered = ReceiptTemplate::render($tipoTemplate, $replacements, null);
+        $fallbackRendered = PlaceholderResolver::resolve($fallbackRendered, ['data' => \Carbon\Carbon::parse($issuedAt)]);
+
+        return $this->sanitizeReceiptHtml($fallbackRendered);
+    }
+
+    private function receiptTemplateTipoForIncasso(Incasso $incasso): string
+    {
+        return match ($incasso->type) {
+            Incasso::TYPE_DONAZIONE => 'incasso_donazione',
+            Incasso::TYPE_ALTRO => 'incasso_altro',
+            default => 'incasso_quota',
+        };
+    }
+
+    private function sanitizeReceiptHtml(string $html): string
+    {
+        $html = trim($html);
+        if ($html === '') {
+            return '';
+        }
+
+        if (! preg_match('/<[^>]+>/', $html)) {
+            $escaped = htmlspecialchars($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            return '<p>' . nl2br($escaped) . '</p>';
+        }
+
+        $allowedTags = '<p><br><strong><em><ul><ol><li><h1><h2><h3><span><b><i><u>';
+        $clean = strip_tags($html, $allowedTags);
+
+        $clean = preg_replace('/\s+on\w+\s*=\s*"[^"]*"/i', '', $clean) ?? $clean;
+        $clean = preg_replace("/\s+on\w+\s*=\s*'[^']*'/i", '', $clean) ?? $clean;
+        $clean = preg_replace('/\s+on\w+\s*=\s*[^\s>]+/i', '', $clean) ?? $clean;
+        $clean = preg_replace_callback(
+            '/\sstyle\s*=\s*"([^"]*)"/i',
+            function (array $m) {
+                $san = $this->sanitizeReceiptStyleAttribute($m[1]);
+
+                return $san !== '' ? ' style="' . htmlspecialchars($san, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"' : '';
+            },
+            $clean
+        ) ?? $clean;
+        $clean = preg_replace_callback(
+            "/\sstyle\s*=\s*'([^']*)'/i",
+            function (array $m) {
+                $san = $this->sanitizeReceiptStyleAttribute($m[1]);
+
+                return $san !== '' ? " style='" . htmlspecialchars($san, ENT_QUOTES | ENT_HTML5, 'UTF-8') . "'" : '';
+            },
+            $clean
+        ) ?? $clean;
+        $clean = preg_replace('/\s+href\s*=\s*"javascript:[^"]*"/i', '', $clean) ?? $clean;
+        $clean = preg_replace("/\s+href\s*=\s*'javascript:[^']*'/i", '', $clean) ?? $clean;
+
+        if (trim(strip_tags($clean)) === '') {
+            return '';
+        }
+
+        return $clean;
+    }
+
+    /**
+     * Consente solo text-align sicuro (editor WYSIWYG) per il PDF, scartando altro CSS inline.
+     */
+    private function sanitizeReceiptStyleAttribute(string $style): string
+    {
+        $style = trim($style);
+        if ($style === '') {
+            return '';
+        }
+        $allowed = ['left', 'right', 'center', 'justify'];
+        foreach (preg_split('/\s*;\s*/', $style) as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+            if (preg_match('/^text-align\s*:\s*(.+)$/i', $part, $mm)) {
+                $val = strtolower(trim($mm[1], " \t\"'"));
+                if (in_array($val, $allowed, true)) {
+                    return 'text-align: ' . $val;
+                }
+            }
+        }
+
+        return '';
     }
 
 }

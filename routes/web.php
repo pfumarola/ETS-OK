@@ -26,6 +26,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SpesaController;
 use App\Http\Controllers\PrimaNotaController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\ReceiptTemplateController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VerbaleController;
 use App\Http\Controllers\EmailTemplateController;
@@ -225,6 +226,9 @@ Route::middleware([
     Route::get('email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
     Route::get('email-templates/{tipo}/edit', [EmailTemplateController::class, 'edit'])->name('email-templates.edit');
     Route::put('email-templates/{tipo}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
+    Route::get('receipt-templates', [ReceiptTemplateController::class, 'index'])->name('receipt-templates.index');
+    Route::get('receipt-templates/{tipo}/edit', [ReceiptTemplateController::class, 'edit'])->name('receipt-templates.edit');
+    Route::put('receipt-templates/{tipo}', [ReceiptTemplateController::class, 'update'])->name('receipt-templates.update');
     Route::get('verbali/prossimo-numero', [VerbaleController::class, 'prossimoNumero'])->name('verbali.prossimo-numero');
     Route::get('verbali/{verbale}/pdf', [VerbaleController::class, 'downloadPdf'])->name('verbali.pdf');
     Route::post('verbali/{verbale}/conferma', [VerbaleController::class, 'conferma'])->name('verbali.conferma');
