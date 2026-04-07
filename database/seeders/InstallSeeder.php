@@ -20,6 +20,7 @@ class InstallSeeder extends Seeder
             RoleSeeder::class,
             MemberTypeSeeder::class,
             OrganiHardcodedSeeder::class,
+            EmailTemplatesSeeder::class,
         ]);
 
         Settings::set('quota_annuale', 50);

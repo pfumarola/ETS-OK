@@ -23,6 +23,7 @@
     },
     "dependencies": {
         "@heroicons/vue": "^2.2.0",
+        "@tiptap/extension-table": "^3.19.0",
         "@tiptap/extension-placeholder": "^3.19.0",
         "@tiptap/extension-text-align": "^3.19.0",
         "@tiptap/extension-text-style": "^3.19.0",

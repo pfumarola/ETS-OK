@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             MemberTypeSeeder::class,
+            EmailTemplatesSeeder::class,
         ]);
 
         Settings::set('quota_annuale', 50);

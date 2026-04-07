@@ -97,6 +97,7 @@ function placeholderLabel(key) {
                                 placeholder="Contenuto ricevuta in HTML..."
                                 min-height="280px"
                                 :placeholder-items="receiptEditorPlaceholders"
+                                enable-table
                             />
                             <textarea
                                 v-if="bodyEditMode === 'raw'"

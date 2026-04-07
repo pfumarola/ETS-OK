@@ -233,7 +233,8 @@ class ReceiptService
             return '<p>' . nl2br($escaped) . '</p>';
         }
 
-        $allowedTags = '<p><br><strong><em><ul><ol><li><h1><h2><h3><span><b><i><u>';
+        $allowedTags = '<p><br><strong><em><ul><ol><li><h1><h2><h3><span><b><i><u>'
+            . '<table><thead><tbody><tfoot><tr><th><td><caption>';
         $clean = strip_tags($html, $allowedTags);
 
         $clean = preg_replace('/\s+on\w+\s*=\s*"[^"]*"/i', '', $clean) ?? $clean;

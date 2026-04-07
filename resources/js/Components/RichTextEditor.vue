@@ -2,6 +2,7 @@
 import { watch, ref, onBeforeUnmount, computed, onMounted } from 'vue';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
+import { TableKit } from '@tiptap/extension-table';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle, FontSize } from '@tiptap/extension-text-style';
@@ -16,6 +17,7 @@ import {
     Bars4Icon,
     ChevronDownIcon,
     DocumentTextIcon,
+    TableCellsIcon,
 } from '@heroicons/vue/24/outline';
 
 const FONT_SIZES = [
@@ -58,21 +60,31 @@ const props = defineProps({
     minHeight: { type: String, default: '200px' },
     /** Se valorizzato, sostituisce il menu placeholder predefinito (verbali/email). */
     placeholderItems: { type: Array, default: null },
+    /** Abilita nodi tabella (HTML table/th/td); necessario per template ricevute con tabelle. */
+    enableTable: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:modelValue']);
 
 const placeholderMenu = computed(() => props.placeholderItems ?? PLACEHOLDERS);
 
-const editor = useEditor({
-    content: props.modelValue || '',
-    extensions: [
+function editorExtensions() {
+    const list = [
         StarterKit,
         Placeholder.configure({ placeholder: props.placeholder }),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         TextStyle,
         FontSize.configure({ types: ['textStyle'] }),
-    ],
+    ];
+    if (props.enableTable) {
+        list.push(TableKit);
+    }
+    return list;
+}
+
+const editor = useEditor({
+    content: props.modelValue || '',
+    extensions: editorExtensions(),
     editorProps: {
         attributes: {
             class: 'prose prose-sm dark:prose-invert max-w-none min-h-[120px] px-3 py-2 focus:outline-none',
@@ -318,6 +330,18 @@ onBeforeUnmount(() => {
             >
                 <NumberedListIcon class="size-4" aria-hidden="true" />
             </button>
+
+            <template v-if="enableTable">
+                <span class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" aria-hidden="true" />
+                <button
+                    type="button"
+                    class="p-2 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    title="Inserisci tabella (3×3 con intestazione)"
+                    @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
+                >
+                    <TableCellsIcon class="size-4" aria-hidden="true" />
+                </button>
+            </template>
 
             <span class="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" aria-hidden="true" />
 

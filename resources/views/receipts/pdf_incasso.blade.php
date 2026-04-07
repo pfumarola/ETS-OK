@@ -9,6 +9,9 @@
         .receipt-number-bar { text-align: right; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #ccc; font-size: 11px; }
         .receipt-number-bar strong { font-size: 12px; }
         .receipt-body { margin-top: 8px; }
+        .receipt-body table { border-collapse: collapse; width: 100%; margin: 0.6em 0; font-size: inherit; }
+        .receipt-body th, .receipt-body td { padding: 4px 8px; vertical-align: top; }
+        .receipt-body th { font-weight: bold; text-align: left; }
         .footer { margin-top: 32px; font-size: 10px; color: #666; }
     </style>
 </head>
