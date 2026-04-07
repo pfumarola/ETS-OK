@@ -272,6 +272,7 @@ function confirmAnnoPrecedenteProceed() {
                         placeholder="Testo ricevuta personalizzato (HTML)"
                         min-height="220px"
                         :placeholder-items="receiptEditorPlaceholders"
+                        enable-table
                     />
                     <InputError class="mt-1" :message="form.errors.receipt_text_override" />
                 </div>
