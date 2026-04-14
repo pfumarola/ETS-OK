@@ -50,12 +50,14 @@ class MemberInviteController extends Controller
         $link = URL::route('members.admission-request.form', ['token' => $invite->token], true);
         $expiryDays = (int) config('member-invite.expiry_days', 7);
         $appName = Settings::get('nome_associazione', config('app.name'));
+        $quotaImporto = number_format((float) Settings::get('quota_annuale', 0), 2, ',', '.');
 
         try {
             $rendered = EmailTemplate::render('invito_ammissione', [
                 'link' => $link,
                 'expiry_days' => (string) $expiryDays,
                 'appName' => $appName,
+                'quota_importo' => $quotaImporto,
                 'year' => (string) now()->year,
             ]);
 

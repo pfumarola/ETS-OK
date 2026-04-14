@@ -107,6 +107,7 @@ class EmailTemplateController extends Controller
             'invito_ammissione' => [
                 'link' => 'https://esempio.it/members/admission-request/xxx',
                 'expiry_days' => '7',
+                'quota_importo' => '50,00',
                 'appName' => 'Nome Associazione',
                 'year' => (string) now()->year,
             ],

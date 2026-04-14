@@ -9,6 +9,7 @@ return [
             'placeholders' => [
                 'link' => 'Link per compilare la domanda (a uso singolo)',
                 'expiry_days' => 'Giorni di validità del link',
+                'quota_importo' => 'Importo quota annuale formattato (es. 50,00)',
                 'appName' => 'Nome associazione',
                 'year' => 'Anno corrente',
             ],
