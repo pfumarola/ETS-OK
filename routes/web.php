@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountingReportController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\ComposeMailController;
 use App\Http\Controllers\RendicontoCassaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
@@ -223,6 +224,9 @@ Route::middleware([
     Route::delete('documents/{document}/attachments/{attachment}', [DocumentController::class, 'destroyAttachment'])->name('documents.attachments.destroy');
     Route::resource('documents', DocumentController::class);
     Route::resource('templates', TemplateController::class)->except(['show']);
+    Route::get('invio-email', [ComposeMailController::class, 'create'])->name('mail.compose');
+    Route::post('invio-email', [ComposeMailController::class, 'store'])->middleware('throttle:20,1')->name('mail.send');
+
     Route::get('email-templates', [EmailTemplateController::class, 'index'])->name('email-templates.index');
     Route::get('email-templates/{tipo}/edit', [EmailTemplateController::class, 'edit'])->name('email-templates.edit');
     Route::put('email-templates/{tipo}', [EmailTemplateController::class, 'update'])->name('email-templates.update');
