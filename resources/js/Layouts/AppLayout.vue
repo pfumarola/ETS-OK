@@ -60,7 +60,7 @@ function sectionForRoute(name) {
     if (!name) return null;
     if (name.startsWith('members.') || name.startsWith('libro-soci.') || name.startsWith('member-types.')) return 'soci';
     if (name.startsWith('incassi.') || name.startsWith('incassi-generici.') || name.startsWith('quote-sociali.') || name.startsWith('donazioni.') || name.startsWith('receipts.') || name.startsWith('spese.') || name.startsWith('expense-refunds.')) return 'cassa';
-    if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.') || name.startsWith('email-templates.') || name.startsWith('receipt-templates.') || name.startsWith('mail.')) return 'documenti';
+    if (name.startsWith('documents.') || name.startsWith('verbali.') || name.startsWith('templates.') || name.startsWith('email-templates.') || name.startsWith('receipt-templates.') || name.startsWith('mail.') || name.startsWith('convocazioni.')) return 'documenti';
     if (name.startsWith('organi.') || name.startsWith('elezioni.')) return 'organiVotazioni';
     if (name.startsWith('events.') || name.startsWith('properties.') || name.startsWith('items.') || name.startsWith('locations.') || name.startsWith('warehouses.')) return 'patrimonio';
     if (name.startsWith('conti.') || name.startsWith('prima-nota.') || name === 'reports.accounting' || name === 'reports.rendiconto-cassa') return 'contabilita';
@@ -248,6 +248,10 @@ const logout = () => {
                                 <ResponsiveNavLink :href="route('templates.index')" :active="route().current('templates.*')">
                                     <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
                                     Template
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink :href="route('convocazioni.index')" :active="route().current('convocazioni.*')">
+                                    <EnvelopeIcon class="size-4 shrink-0" aria-hidden="true" />
+                                    Convocazioni
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')" :href="route('mail.compose')" :active="route().current('mail.*')">
                                     <PaperAirplaneIcon class="size-4 shrink-0" aria-hidden="true" />
@@ -453,6 +457,10 @@ const logout = () => {
                                         <NavLink :href="route('templates.index')" :active="route().current('templates.*')">
                                             <DocumentTextIcon class="size-4 shrink-0" aria-hidden="true" />
                                             Template
+                                        </NavLink>
+                                        <NavLink :href="route('convocazioni.index')" :active="route().current('convocazioni.*')">
+                                            <EnvelopeIcon class="size-4 shrink-0" aria-hidden="true" />
+                                            Convocazioni
                                         </NavLink>
                                         <NavLink v-if="$page.props.userRoles?.includes('admin') || $page.props.userRoles?.includes('segreteria')" :href="route('mail.compose')" :active="route().current('mail.*')">
                                             <PaperAirplaneIcon class="size-4 shrink-0" aria-hidden="true" />
