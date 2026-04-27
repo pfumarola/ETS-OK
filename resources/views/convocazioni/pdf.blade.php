@@ -22,7 +22,7 @@
         <div class="meta">
             {{ $convocazione->tipo_label ?? $convocazione->tipo }}
             @if($convocazione->scheduled_at)
-                - {{ $convocazione->scheduled_at->format('d/m/Y H:i') }}
+                - {{ $convocazione->scheduled_at->copy()->setTimezone('Europe/Rome')->format('d/m/Y H:i') }}
             @endif
             - {{ $convocazione->luogo }}
         </div>

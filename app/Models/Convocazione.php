@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Convocazione extends Model
 {
+    private const DISPLAY_TIMEZONE = 'Europe/Rome';
     public const TIPO_ASSEMBLEA = 'assemblea';
     public const TIPO_CONSIGLIO = 'consiglio_direttivo';
 
@@ -28,7 +29,7 @@ class Convocazione extends Model
         'sent_by',
     ];
 
-    protected $appends = ['tipo_label', 'stato_label', 'in_bozza'];
+    protected $appends = ['tipo_label', 'stato_label', 'in_bozza', 'scheduled_at_local', 'scheduled_at_input'];
 
     protected function casts(): array
     {
@@ -74,5 +75,23 @@ class Convocazione extends Model
     public function getInBozzaAttribute(): bool
     {
         return $this->isBozza();
+    }
+
+    public function getScheduledAtLocalAttribute(): ?string
+    {
+        if (! $this->scheduled_at) {
+            return null;
+        }
+
+        return $this->scheduled_at->copy()->setTimezone(self::DISPLAY_TIMEZONE)->format('d/m/Y H:i');
+    }
+
+    public function getScheduledAtInputAttribute(): ?string
+    {
+        if (! $this->scheduled_at) {
+            return null;
+        }
+
+        return $this->scheduled_at->copy()->setTimezone(self::DISPLAY_TIMEZONE)->format('Y-m-d\TH:i');
     }
 }

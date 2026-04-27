@@ -58,7 +58,7 @@ function applyFilter(next) {
                         </thead>
                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                             <tr v-for="c in convocazioni.data" :key="c.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <td class="px-4 py-2">{{ c.scheduled_at ? new Date(c.scheduled_at).toLocaleString('it-IT') : '—' }}</td>
+                                <td class="px-4 py-2">{{ c.scheduled_at_local || '—' }}</td>
                                 <td class="px-4 py-2">{{ c.tipo_label }}</td>
                                 <td class="px-4 py-2">{{ c.titolo || '—' }}</td>
                                 <td class="px-4 py-2">{{ c.stato_label }}</td>

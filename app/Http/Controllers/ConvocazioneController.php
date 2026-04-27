@@ -13,6 +13,8 @@ use Inertia\Inertia;
 
 class ConvocazioneController extends Controller
 {
+    private const DISPLAY_TIMEZONE = 'Europe/Rome';
+
     public function __construct(private readonly ConvocazioneRecipientService $recipientService)
     {
         $this->middleware('role:admin,segreteria');
@@ -43,7 +45,7 @@ class ConvocazioneController extends Controller
             'tipoOptions' => $this->tipoOptions(),
             'templateConfig' => config('convocazioni.templates', []),
             'defaultValues' => [
-                'scheduled_at' => now()->format('Y-m-d\TH:i'),
+                'scheduled_at' => now(self::DISPLAY_TIMEZONE)->format('Y-m-d\TH:i'),
             ],
         ]);
     }
@@ -150,25 +152,32 @@ class ConvocazioneController extends Controller
             'letterhead' => PdfLetterheadData::data(),
         ])->setOption('enable_php', true);
 
-        $filename = 'convocazione-' . Str::slug($convocazione->tipo) . '-' . $convocazione->scheduled_at?->format('Y-m-d') . '.pdf';
+        $filename = 'convocazione-' . Str::slug($convocazione->tipo) . '-' . $convocazione->scheduled_at?->copy()->setTimezone(self::DISPLAY_TIMEZONE)->format('Y-m-d') . '.pdf';
 
         return $pdf->download($filename);
     }
 
     private function validatePayload(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'tipo' => 'required|in:' . implode(',', [Convocazione::TIPO_ASSEMBLEA, Convocazione::TIPO_CONSIGLIO]),
             'titolo' => 'nullable|string|max:255',
             'scheduled_at' => 'required|date',
             'luogo' => 'required|string|max:255',
             'ordine_del_giorno' => 'required|string|max:20000',
         ]);
+
+        // L'input datetime-local è in ora locale Italia; a DB salviamo UTC.
+        $validated['scheduled_at'] = \Carbon\Carbon::parse($validated['scheduled_at'], self::DISPLAY_TIMEZONE)
+            ->setTimezone('UTC')
+            ->format('Y-m-d H:i:s');
+
+        return $validated;
     }
 
     private function renderTemplate(array $data): string
     {
-        $scheduled = \Carbon\Carbon::parse($data['scheduled_at']);
+        $scheduled = \Carbon\Carbon::parse($data['scheduled_at'], 'UTC')->setTimezone(self::DISPLAY_TIMEZONE);
         $tipo = $data['tipo'];
         $template = config("convocazioni.templates.$tipo.body", '');
         $odgHtml = (string) ($data['ordine_del_giorno'] ?? '');
@@ -205,7 +214,7 @@ class ConvocazioneController extends Controller
             return $label;
         }
 
-        return $label . ' del ' . $scheduled->format('d/m/Y');
+        return $label . ' del ' . $scheduled->copy()->setTimezone(self::DISPLAY_TIMEZONE)->format('d/m/Y');
     }
 
     private function recipientSummary(array $recipients): array

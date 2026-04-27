@@ -33,7 +33,7 @@ function sendConvocazione() {
                     <div class="flex flex-wrap justify-between gap-4">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{{ convocazione.titolo || convocazione.tipo_label }}</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ convocazione.tipo_label }} - {{ convocazione.scheduled_at ? new Date(convocazione.scheduled_at).toLocaleString('it-IT') : '—' }}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ convocazione.tipo_label }} - {{ convocazione.scheduled_at_local || '—' }}</p>
                         </div>
                         <div class="text-sm">
                             <p><span class="font-medium">Stato:</span> {{ convocazione.stato_label }}</p>

@@ -16,7 +16,7 @@ const props = defineProps({
 const form = useForm({
     tipo: props.convocazione.tipo ?? 'assemblea',
     titolo: props.convocazione.titolo ?? '',
-    scheduled_at: props.convocazione.scheduled_at ? props.convocazione.scheduled_at.slice(0, 16) : '',
+    scheduled_at: props.convocazione.scheduled_at_input ?? '',
     luogo: props.convocazione.luogo ?? '',
     ordine_del_giorno: props.convocazione.ordine_del_giorno ?? '',
 });
